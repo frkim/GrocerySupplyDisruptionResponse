@@ -20,6 +20,7 @@ class DeploymentContractTests(unittest.TestCase):
         for setting in ("host: containerapp", "remoteBuild: true", "context: ."):
             self.assertIn(setting, config)
         self.assertIn("module: app", config)
+        self.assertIn("resourceName: ${AZURE_CONTAINER_APP_NAME}", config)
         parameters = json.loads((ROOT / "infra/app.parameters.json").read_text(encoding="utf-8"))
         self.assertEqual(
             parameters["parameters"]["containerImage"]["value"], "${SERVICE_APP_IMAGE_NAME}"
@@ -87,8 +88,12 @@ class DeploymentContractTests(unittest.TestCase):
     def test_private_endpoint_and_consumption_environment_use_separate_subnets(self):
         core = (ROOT / "infra/core.bicep").read_text(encoding="utf-8")
         self.assertIn("serviceName: 'Microsoft.App/environments'", core)
-        self.assertIn("name: '${namePrefix}-env-private-${suffix}'", core)
-        self.assertIn("infrastructureSubnetId: virtualNetwork.properties.subnets[0].id", core)
+        self.assertIn("name: '${namePrefix}-env-private-v2-${suffix}'", core)
+        self.assertIn("infrastructureSubnetId: virtualNetwork.properties.subnets[2].id", core)
+        for subnet in ("container-apps", "private-endpoints", "container-apps-v2"):
+            self.assertIn(f"name: '{subnet}'", core)
+        for prefix in ("10.42.0.0/23", "10.42.2.0/24", "10.42.4.0/23"):
+            self.assertIn(f"addressPrefix: '{prefix}'", core)
         self.assertIn("id: virtualNetwork.properties.subnets[1].id", core)
         self.assertIn("privateEndpointNetworkPolicies: 'Disabled'", core)
         self.assertIn("workloadProfileType: 'Consumption'", core)
@@ -107,6 +112,8 @@ class DeploymentContractTests(unittest.TestCase):
         self.assertIn("value: 'ManagedIdentityCredential'", app)
         self.assertNotIn("name: 'PROVISION_FOUNDRY_AGENTS'", app)
         main = (ROOT / "infra/main.bicep").read_text(encoding="utf-8")
+        self.assertIn("var appName = '${namePrefix}-app-v2'", main)
+        self.assertIn("param appName string = '${namePrefix}-app-v2'", app)
         self.assertIn("output AZURE_SEED_JOB_NAME string = '${appName}-seed'", main)
         self.assertIn("output AZURE_SEED_JOB_NAME string = seedJob.name", app)
 

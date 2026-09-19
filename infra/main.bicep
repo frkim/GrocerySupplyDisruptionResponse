@@ -40,7 +40,7 @@ param knowledgeConnectionName string = 'knowledge-search'
 var tags = {
   'azd-env-name': environmentName
 }
-var appName = '${namePrefix}-app'
+var appName = '${namePrefix}-app-v2'
 
 resource rg 'Microsoft.Resources/resourceGroups@2024-03-01' = {
   name: !empty(resourceGroupName) ? resourceGroupName : 'rg-${environmentName}'

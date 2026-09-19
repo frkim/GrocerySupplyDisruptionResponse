@@ -10,7 +10,7 @@ param namePrefix string = 'gsdr'
 param environmentName string = 'grocery-disruption'
 
 @description('Container app name supplied by the provisioning template.')
-param appName string = '${namePrefix}-app'
+param appName string = '${namePrefix}-app-v2'
 
 @description('Resource ID of the Container Apps managed environment.')
 param containerAppEnvironmentId string

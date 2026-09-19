@@ -271,6 +271,7 @@ can be supplied until the resources and application have been deployed.
 | Unexpected OIDC error | Confirm the run uses the latest `main` workflow; the current configuration uses `creds`, not federated login. |
 | Role assignment denied | Ask an administrator for the required role-assignment rights at the deployment scope. |
 | AcrPull gate fails | Inspect the reported runtime principal and ACR scope, verify the provisioned `AcrPull` assignment and deployment identity's read access, and allow propagation before rerunning. The gate does not repair roles or require an existing Container App. |
+| Environment fails with SubscriptionNotRegisteredForFeature | If the error names `Microsoft.Network/AllowBringYourOwnPublicIpAddress`, register that subscription feature and re-register the network provider as shown below, then rerun the failed job. |
 | Seed operation returns firewall 403 | Confirm the private endpoint is approved, its SQL DNS records are linked to the VNet, and the job runs in the private environment. Do not open Cosmos to the internet. |
 | Seed operation returns authorization 403 | Verify the job's managed-identity data roles and allow RBAC propagation; retries are bounded. |
 | Seed job fails or times out | Inspect the exact execution named in the hook output and its container logs. Image pull, private DNS, data seeding, and agent registration must all succeed before URL verification. |
@@ -279,6 +280,40 @@ can be supplied until the resources and application have been deployed.
 | Foundry provisioning fails | Check Foundry project permissions, model deployment and knowledge connection; do not treat fallback inference as successful agent registration. |
 | Postdeploy fails | Inspect Container App revision logs and environment variables; a successful ARM deployment alone is insufficient. |
 | Local browser refuses connection | Run both local servers from the README; provisioning Azure does not start localhost servers. |
+
+### Subscription networking prerequisite
+
+Some subscriptions require this feature before Azure can provision the public
+ingress of a VNet-integrated Container Apps environment. Run these commands only
+when the deployment reports the feature is missing, using an identity authorized
+to register subscription features:
+
+```powershell
+az feature register --namespace Microsoft.Network --name AllowBringYourOwnPublicIpAddress --subscription <subscription-id>
+az feature show --namespace Microsoft.Network --name AllowBringYourOwnPublicIpAddress --subscription <subscription-id> --query properties.state -o tsv
+# Wait for Registered before propagating the feature to the resource provider.
+az provider register --namespace Microsoft.Network --subscription <subscription-id> --wait
+```
+
+If registration remains pending approval, contact Azure support instead of
+opening Cosmos to public access. Once registered, rerun the failed GitHub job.
+Do not delete the resource group or the failed environment as a first response.
+This prerequisite does not change Cosmos networking or application RBAC.
+
+### Non-destructive recovery resources
+
+The runtime uses the `env-private-v2` environment, `container-apps-v2` subnet,
+and `gsdr-app-v2` application (`gsdr-app-v2-seed` job with the default prefix).
+Earlier environments, the original app/job, and the original delegated subnet
+are retained rather than deleted when upgrading an existing deployment. The
+data services, private endpoint, images, and identities are reused.
+
+`azure.yaml` targets the exact `AZURE_CONTAINER_APP_NAME` output instead of
+discovering an arbitrary retained app with the same service tag. If an earlier
+environment cannot create any replicas after a provisioning failure, merely
+increasing the app deployment timeout is not evidence that it has recovered.
+Retained resources should be reviewed separately before any approved cleanup;
+do not assume that a successful replacement deletes or stops older workloads.
 
 ## References
 

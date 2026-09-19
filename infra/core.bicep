@@ -371,6 +371,20 @@ resource virtualNetwork 'Microsoft.Network/virtualNetworks@2024-05-01' = {
           privateEndpointNetworkPolicies: 'Disabled'
         }
       }
+      {
+        name: 'container-apps-v2'
+        properties: {
+          addressPrefix: '10.42.4.0/23'
+          delegations: [
+            {
+              name: 'container-apps'
+              properties: {
+                serviceName: 'Microsoft.App/environments'
+              }
+            }
+          ]
+        }
+      }
     ]
   }
 }
@@ -430,14 +444,14 @@ resource cosmosPrivateDnsGroup 'Microsoft.Network/privateEndpoints/privateDnsZon
   }
 }
 
-// VNet integration is immutable; retain the original non-VNet environment.
+// Preserve prior environments and their subnet during non-destructive recovery.
 resource containerAppEnvironment 'Microsoft.App/managedEnvironments@2024-03-01' = {
-  name: '${namePrefix}-env-private-${suffix}'
+  name: '${namePrefix}-env-private-v2-${suffix}'
   location: location
   tags: tags
   properties: {
     vnetConfiguration: {
-      infrastructureSubnetId: virtualNetwork.properties.subnets[0].id
+      infrastructureSubnetId: virtualNetwork.properties.subnets[2].id
       internal: false
     }
     workloadProfiles: [
