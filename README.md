@@ -118,7 +118,15 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:5173`. With no Azure settings, the backend uses bundled JSON and local Markdown knowledge. Model-backed agents report degraded execution until Azure OpenAI is configured, but the app, graph, scenario metadata, and local data paths still start without cloud services.
+Open `http://localhost:5173` for the Vite dev server, which proxies the API to `http://127.0.0.1:8000`. A container or production build serves the UI and the API together on a single origin at `http://localhost:8000`.
+
+With no Azure settings the backend uses the bundled JSON datasets and the local Markdown knowledge corpus. Model-backed agents fall back to a deterministic, data-grounded simulation so the full twenty-agent workflow, the approval gate, and every figure on screen still reconcile with the seed data. Simulated payloads are tagged `_executionNote: simulated_offline` so the UI can label them honestly, and the simulator is never used once a model deployment is configured.
+
+Verify the whole solution offline at any time:
+
+```powershell
+python tests\test_end_to_end.py
+```
 
 ## Full Azure provisioning, seed, and deploy
 
@@ -141,7 +149,7 @@ pwsh .\scripts\deploy.ps1
 
 | Workflow | Purpose |
 | --- | --- |
-| `.github/workflows/ci.yml` | Restores dependencies from approved feeds, validates backend import/compile checks, builds the frontend, and runs local-safe tests. |
+| `.github/workflows/ci.yml` | Restores dependencies from approved feeds, validates backend import/compile checks, builds the frontend, validates every seed dataset's referential integrity, builds the production container image, and runs the offline end-to-end verification harness. |
 | `.github/workflows/deploy.yml` | Builds the container image, deploys the Azure Container App, and verifies `/api/health`. |
 
 `deploy.yml` requires one repository secret named `AZURE_CREDENTIALS` containing the JSON output shape produced by `az ad sp create-for-rbac --sdk-auth`. Use placeholder values only in documentation:
@@ -160,6 +168,25 @@ pwsh .\scripts\deploy.ps1
   "managementEndpointUrl": "https://management.core.windows.net/"
 }
 ```
+
+## Front-end URL
+
+| Mode | URL |
+| --- | --- |
+| Local dev server (Vite, proxies the API) | `http://localhost:5173` |
+| Local single-origin build or container | `http://localhost:8000` |
+| Deployed to Azure Container Apps | `https://<app-name>.<region-id>.azurecontainerapps.io` |
+
+The deployed value is not guessable ahead of time because Azure generates the region-unique ingress domain. Read the real URL from the `appUrl` deployment output after `deploy.yml` succeeds, or at any time with:
+
+```powershell
+az deployment group show `
+  --resource-group rg-grocery-disruption `
+  --name gsdr-core `
+  --query properties.outputs.appUrl.value -o tsv
+```
+
+`deploy.yml` also prints the URL to the workflow run summary.
 
 ## Security note
 
