@@ -26,7 +26,7 @@ service discovery must retain the azd tags.
 
 Emit uppercase azd outputs for all application endpoints, ACR discovery and
 `APP_URL`. Never output the runtime identity client ID as `AZURE_CLIENT_ID`:
-that name belongs to the pipeline's federated deployment identity.
+that name belongs to the pipeline's deployment identity.
 
 ## RBAC
 

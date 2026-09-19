@@ -10,7 +10,7 @@ You take Grocery Supply Disruption Response from source to a running, verified A
 
 * Use the selected azd environment. The default `grocery-disruption` environment targets `rg-grocery-disruption`.
 * Never delete resource groups or resources you did not create in this task.
-* GitHub deployment uses azd with OIDC federation, not client-secret JSON.
+* GitHub deployment uses the `AZURE_CREDENTIALS` repository secret with `azure/login`; azd reuses the verified Azure CLI identity. Never expose the secret in files or command arguments.
 * Package restores must use the Microsoft-protected feeds already configured on this workstation. Never point pip, npm, or NuGet at a public registry.
 * Never write credentials or client secrets into repository files. Keep target identifiers configurable; identifiers are not authentication secrets.
 

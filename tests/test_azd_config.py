@@ -30,23 +30,29 @@ class DeploymentContractTests(unittest.TestCase):
         for phase in ("preprovision", "postprovision", "postdeploy"):
             self.assertIn(f"./scripts/azd-hooks.ps1 -Phase {phase}", config)
 
-    def test_pipeline_is_secretless_and_gated_on_ci(self):
+    def test_pipeline_uses_repository_credentials_and_is_gated_on_ci(self):
         workflow = (ROOT / ".github/workflows/azure-dev.yml").read_text(encoding="utf-8")
-        self.assertNotIn("AZURE_CREDENTIALS", workflow)
-        self.assertNotIn("client-secret", workflow)
-        self.assertIn("id-token: write", workflow)
-        self.assertIn("--federated-credential-provider github", workflow)
+        self.assertIn("creds: ${{ secrets.AZURE_CREDENTIALS }}", workflow)
+        self.assertNotIn("--client-secret", workflow)
+        self.assertNotIn("id-token: write", workflow)
+        self.assertNotIn("--federated-credential-provider", workflow)
+        self.assertNotIn("AZURE_CREDENTIALS", workflow.split("jobs:", 1)[0])
         self.assertIn("github.event.workflow_run.conclusion == 'success'", workflow)
         self.assertIn("github.event.workflow_run.event == 'push'", workflow)
         self.assertIn("github.event.workflow_run.head_repository.full_name == github.repository", workflow)
         self.assertIn("github.ref == 'refs/heads/main'", workflow)
         self.assertIn("github.event.workflow_run.head_sha || github.sha", workflow)
         self.assertIn("uses: azure/login@v2", workflow)
-        for setting in ("client-id", "tenant-id", "subscription-id"):
-            variable = "AZURE_" + setting.upper().replace("-", "_")
-            self.assertIn(f"{setting}: ${{{{ vars.{variable} }}}}", workflow)
+        validation = workflow.index("./scripts/configure-azure-auth.ps1 -Mode ValidateSecret")
+        login = workflow.index("uses: azure/login@v2")
+        azd_auth = workflow.index("./scripts/configure-azure-auth.ps1 -Mode UseAzureCli")
+        self.assertLess(validation, login)
+        self.assertLess(login, azd_auth)
+        for setting in ("client-id:", "tenant-id:", "subscription-id:"):
+            self.assertNotIn(setting, workflow)
         self.assertNotIn("azd up", workflow)
         provision = workflow.index("azd provision --no-prompt --environment $env:AZURE_ENV_NAME")
+        self.assertLess(azd_auth, provision)
         gate = workflow.index("./scripts/verify-acr-pull.ps1")
         deploy = workflow.index("azd deploy --no-prompt --environment $env:AZURE_ENV_NAME")
         self.assertLess(provision, gate)

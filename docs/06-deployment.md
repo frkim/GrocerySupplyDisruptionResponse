@@ -1,8 +1,8 @@
 # Deploy with Azure Developer CLI
 
 The local command and GitHub Actions both use `azure.yaml`, the same Bicep
-templates, and the same provisioning and verification hooks. No service-principal
-password is needed.
+templates, and the same provisioning and verification hooks. Local deployment uses
+interactive azd authentication; GitHub uses the `AZURE_CREDENTIALS` repository secret.
 
 ## Prerequisites and cost
 
@@ -111,12 +111,13 @@ After infrastructure exists, `azd deploy` rebuilds/redeploys just the applicatio
 Run `azd provision` for infrastructure, seed data, knowledge, or agent definition
 updates so the postprovision hook also runs.
 
-## GitHub Actions with OIDC
+## GitHub Actions
 
 The workflow is `.github/workflows/azure-dev.yml`. It runs after CI succeeds for
 a trusted push to `main`, and supports manual dispatch from `main`. Pull requests
 cannot run the Azure deployment job. It checks out the commit that passed CI,
-uses GitHub OIDC to sign both azd and Azure CLI into the same subscription, and runs
+signs Azure CLI in using `AZURE_CREDENTIALS`, configures azd to use that verified
+CLI session, and runs
 `azd provision --no-prompt`, the `scripts/verify-acr-pull.ps1` gate, then
 `azd deploy --no-prompt`. The split flow retains the same provisioning, seeding,
 build, and verification hooks as `azd up`.
@@ -137,56 +138,57 @@ propagation, ACR data-plane token readiness, or a successful image pull. Cached
 authorization and token issuance can still lag behind the visible assignment;
 the deployment and postdeploy checks must still succeed.
 
-From the already configured local azd environment:
+Create the repository **Actions secret** `AZURE_CREDENTIALS` with this JSON
+structure, using a current secret value from an approved deployment application:
 
-```powershell
-gh auth login
-azd pipeline config --provider github --auth-type federated --remote-name origin
+```json
+{
+  "clientId": "<application-client-id>",
+  "clientSecret": "<client-secret-value>",
+  "subscriptionId": "<subscription-id>",
+  "tenantId": "<tenant-id>"
+}
 ```
 
-Review the prompts: this operation can create an Entra application/service
-principal, configure federation, grant Azure roles, set GitHub variables, and
-offer to commit/push changes. It requires the relevant directory permissions and
-repository administration rights. Its default Azure grants include Contributor
-and User Access Administrator at subscription scope. Follow your organization's
-approval process rather than granting subscription-wide access without review.
+Use the secret **value**, not its secret ID. Enter it through GitHub's repository
+secret settings or an approved secrets-management process; never put the populated
+JSON in source control, command examples, logs, or build artifacts. Rotate exposed
+values and update the repository secret before deployment. The workflow cannot
+verify that a secret stored in GitHub matches a credential tested elsewhere until
+the runner authenticates with it.
 
-For an existing organization-approved deployment application, supply its
-**application/client ID** (not its object ID):
-
-```powershell
-azd pipeline config --provider github --auth-type federated --remote-name origin `
-  --principal-id <approved-application-client-id>
-```
-
-An administrator can instead preconfigure narrowly scoped access and federation:
-issuer `https://token.actions.githubusercontent.com`, audience
-`api://AzureADTokenExchange`, subject
-`repo:frkim/GrocerySupplyDisruptionResponse:ref:refs/heads/main`.
-This workflow does not use a GitHub environment; if one is added, its federation
-subject must change to match. Subscription-scoped template deployments and
-resource-group creation still require appropriate subscription control-plane
-permissions even when most resource permissions are scoped to the group.
-
-These repository **Actions variables**, not JSON secrets, are required:
+These repository **Actions variables** are also required:
 
 | Variable | Purpose |
 | --- | --- |
-| `AZURE_CLIENT_ID` | Federated deployment application's client ID |
-| `AZURE_TENANT_ID` | Target tenant ID |
-| `AZURE_SUBSCRIPTION_ID` | Target subscription ID |
+| `AZURE_CLIENT_ID` | Deployment application's client ID; must match the secret |
+| `AZURE_TENANT_ID` | Target tenant ID; must match the secret |
+| `AZURE_SUBSCRIPTION_ID` | Target subscription ID; must match the secret |
 | `AZURE_ENV_NAME` | Same environment name used locally |
 | `AZURE_LOCATION` | Deployment region |
 
-Optional variables mirror model settings above plus `AZURE_RESOURCE_GROUP`;
-`azure.yaml` lists them for `azd pipeline config`. Re-run configuration or update
-the GitHub variables after changing local settings. Never export
+`scripts/configure-azure-auth.ps1 -Mode ValidateSecret` validates the secret
+without printing it and rejects missing fields or identity/target mismatches.
+`azure/login` consumes the secret directly. Then the helper's `UseAzureCli` mode
+checks the actual CLI service principal, tenant, and subscription before setting
+`azd config set auth.useAzCliAuth true`. Thus azd, provisioning hooks, and the
+AcrPull gate use the same identity. No GitHub OIDC token is requested and no secret
+is passed on an azd command line or written into the azd project environment.
+
+Authentication alone does not grant deployment rights. The approved principal
+needs resource-deployment and role-assignment rights described under prerequisites.
+Subscription-scoped template deployments and resource-group creation require
+appropriate subscription permissions even when resource grants are group-scoped.
+The workflow does not create an Entra app, configure federation, or grant itself
+subscription-wide permissions.
+
+Optional variables mirror model settings above plus `AZURE_RESOURCE_GROUP`.
+Update the GitHub variables after changing local settings. Never export
 `SERVICE_APP_IMAGE_NAME` as a fixed pipeline variable; the deployment must preserve
 the actual current image during reprovisioning.
 
-The previous `AZURE_CREDENTIALS` secret-based workflow is replaced, not run
-alongside the OIDC workflow. Do not reuse previously exposed client secrets.
-Once the workflow is on `main` and federation is configured:
+Only `.github/workflows/azure-dev.yml` deploys the app; the old `deploy.yml`
+remains removed. Once the secret and variables are configured:
 
 ```powershell
 gh workflow run azure-dev.yml --repo frkim/GrocerySupplyDisruptionResponse --ref main
@@ -197,6 +199,22 @@ CI independently builds the app/image, compiles Bicep, parses the azd project an
 PowerShell scripts, validates seed data, and runs offline workflow and deployment
 helper tests. Passing CI is not evidence that Azure quota, RBAC, or live inference
 has been verified.
+
+### Optional migration to OIDC
+
+OIDC avoids maintaining a long-lived client secret and is recommended when an
+administrator can configure the trust. It is **not the active authentication mode**
+of this workflow. Migration requires changing the workflow authentication steps
+and permissions as well as configuring federation; adding variables alone is not
+sufficient.
+
+For an approved deployment application, the federation subject for this workflow
+is `repo:frkim/GrocerySupplyDisruptionResponse:ref:refs/heads/main`, issuer
+`https://token.actions.githubusercontent.com`, and audience
+`api://AzureADTokenExchange`. Review any Azure grants before using
+`azd pipeline config --provider github --auth-type federated --remote-name origin`;
+its defaults can grant Contributor and User Access Administrator at subscription
+scope. Do not run that setup command as a fix for the secret-based workflow.
 
 ## Front-end URL
 
@@ -222,7 +240,10 @@ can be supplied until the resources and application have been deployed.
 | Symptom | Action |
 | --- | --- |
 | Missing repository variables | Configure the pipeline or set the five required Actions variables; the workflow fails before provisioning. |
-| OIDC login rejected | Check tenant/client ID and exact federation subject; use the trusted `main` branch. |
+| Missing or malformed AZURE_CREDENTIALS | Store the four-field JSON as an Actions repository secret, not a repository variable. |
+| Credential IDs do not match variables | Align client, tenant, and subscription IDs; the workflow refuses to deploy to an unintended identity or target. |
+| Client-secret login rejected | Check secret expiry, use the secret value rather than its ID, and confirm the secret belongs to the configured application and tenant. |
+| Unexpected OIDC error | Confirm the run uses the latest `main` workflow; the current configuration uses `creds`, not federated login. |
 | Role assignment denied | Ask an administrator for the required role-assignment rights at the deployment scope. |
 | AcrPull gate fails | Inspect the reported runtime principal and ACR scope, verify the provisioned `AcrPull` assignment and deployment identity's read access, and allow propagation before rerunning. The gate does not repair roles or require an existing Container App. |
 | Seed operation returns 403 | Verify the deployment principal's data roles and allow RBAC propagation; hooks retry bounded transient failures, then stop. |
@@ -236,6 +257,7 @@ can be supplied until the resources and application have been deployed.
 
 - [Azure Developer CLI schema](https://learn.microsoft.com/azure/developer/azure-developer-cli/azd-schema)
 - [ACR remote builds](https://learn.microsoft.com/azure/developer/azure-developer-cli/remote-builds)
-- [GitHub OIDC pipeline setup](https://learn.microsoft.com/azure/developer/azure-developer-cli/pipeline-github-actions)
-- [Azure CLI OIDC login](https://learn.microsoft.com/azure/developer/github/connect-from-azure-openid-connect)
+- [GitHub Azure login with a service principal secret](https://learn.microsoft.com/azure/developer/github/connect-from-azure-secret)
+- [azd Azure CLI authentication](https://learn.microsoft.com/azure/developer/javascript/ai/langchain-agent-on-azure#authenticate-to-the-azure-cli-and-azure-developer-cli)
+- [Optional GitHub OIDC pipeline setup](https://learn.microsoft.com/azure/developer/azure-developer-cli/pipeline-github-actions)
 - [Role assignment listing without Graph queries](https://learn.microsoft.com/cli/azure/role/assignment#az-role-assignment-list)

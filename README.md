@@ -157,7 +157,7 @@ with `azd provision --preview`. See [deployment prerequisites and configuration]
 | Workflow | Purpose |
 | --- | --- |
 | `.github/workflows/ci.yml` | Builds the app and image, validates seed data and Bicep/azd configuration, and runs offline workflow and deployment-script tests. |
-| `.github/workflows/azure-dev.yml` | Runs `azd provision`, a runtime identity `AcrPull` visibility gate, then `azd deploy` using GitHub OIDC after CI succeeds on a push to `main`, or manually on `main`. |
+| `.github/workflows/azure-dev.yml` | Runs `azd provision`, a runtime identity `AcrPull` visibility gate, then `azd deploy` using the `AZURE_CREDENTIALS` repository secret after CI succeeds on a push to `main`, or manually on `main`. |
 
 The split GitHub flow preserves the same provisioning and verification hooks as
 `azd up`, but waits for the runtime identity's ACR pull role before image deployment.
@@ -165,17 +165,20 @@ The gate only reads Azure RBAC; it does not create identities or change assignme
 Assignment visibility does not prove ACR data-plane token readiness or completed
 permission propagation; deployment and postdeploy checks must still succeed.
 
-Configure the GitHub federation once, from the selected azd environment:
+Configure the `AZURE_CREDENTIALS` repository secret with an approved service
+principal's `clientId`, `clientSecret`, `subscriptionId`, and `tenantId`. Set the
+matching repository variables `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`,
+`AZURE_SUBSCRIPTION_ID`, `AZURE_ENV_NAME`, and `AZURE_LOCATION`.
+The workflow validates these values, signs Azure CLI in using the secret, and
+configures azd to use the same verified CLI identity. It does not use OIDC.
 
 ```powershell
-gh auth login
-azd pipeline config --provider github --auth-type federated --remote-name origin
+gh workflow run azure-dev.yml --repo frkim/GrocerySupplyDisruptionResponse --ref main
 ```
 
-This command creates or configures a deployment identity, federation, Azure roles,
-and repository variables; review its prompts before approving. No `AZURE_CREDENTIALS`
-secret is needed. Detailed permissions, existing-identity setup, and manual trigger
-instructions are in [the deployment guide](docs/06-deployment.md#github-actions-with-oidc).
+Never commit the secret or paste it into logs. Rotate exposed or expired values
+in GitHub before deployment. Setup, permissions, and an optional future OIDC
+migration are described in [the deployment guide](docs/06-deployment.md#github-actions).
 
 ## Front-end URL
 
