@@ -6,6 +6,12 @@ param location string = resourceGroup().location
 @description('Prefix applied to every resource name.')
 param namePrefix string = 'gsdr'
 
+@description('azd environment name for resource discovery.')
+param environmentName string = 'grocery-disruption'
+
+@description('Container app name supplied by the provisioning template.')
+param appName string = '${namePrefix}-app'
+
 @description('Resource ID of the Container Apps managed environment.')
 param containerAppEnvironmentId string
 
@@ -13,6 +19,7 @@ param containerAppEnvironmentId string
 param acrLoginServer string
 
 @description('Full container image reference including registry, repository and tag.')
+@minLength(1)
 param containerImage string
 
 @description('Resource ID of the user-assigned managed identity.')
@@ -45,6 +52,10 @@ param searchEndpoint string
 @description('Azure AI Search index name.')
 param searchIndexName string = 'grocery-disruption-knowledge'
 
+param knowledgeContainer string = 'grocery-knowledge'
+param knowledgeConnectionName string = 'knowledge-search'
+param foundryAgentPrefix string = 'gsdr'
+
 @description('Primary blob endpoint of the storage account.')
 param storageBlobEndpoint string
 
@@ -52,8 +63,12 @@ param storageBlobEndpoint string
 param appInsightsConnectionString string
 
 resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
-  name: '${namePrefix}-app'
+  name: appName
   location: location
+  tags: {
+    'azd-env-name': environmentName
+    'azd-service-name': 'app'
+  }
   identity: {
     type: 'UserAssigned'
     userAssignedIdentities: {
@@ -63,6 +78,7 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
   properties: {
     environmentId: containerAppEnvironmentId
     configuration: {
+      activeRevisionsMode: 'Single'
       ingress: {
         external: true
         targetPort: 8000
@@ -85,6 +101,42 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
             cpu: json('1.0')
             memory: '2Gi'
           }
+          probes: [
+            {
+              type: 'Startup'
+              httpGet: {
+                path: '/api/health'
+                port: 8000
+                scheme: 'HTTP'
+              }
+              initialDelaySeconds: 10
+              periodSeconds: 10
+              timeoutSeconds: 5
+              failureThreshold: 60
+            }
+            {
+              type: 'Readiness'
+              httpGet: {
+                path: '/api/health'
+                port: 8000
+                scheme: 'HTTP'
+              }
+              periodSeconds: 10
+              timeoutSeconds: 5
+              failureThreshold: 3
+            }
+            {
+              type: 'Liveness'
+              httpGet: {
+                path: '/api/health'
+                port: 8000
+                scheme: 'HTTP'
+              }
+              periodSeconds: 30
+              timeoutSeconds: 5
+              failureThreshold: 3
+            }
+          ]
           env: [
             // Tells DefaultAzureCredential which user-assigned identity to use.
             {
@@ -149,18 +201,23 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
             }
             {
               name: 'KNOWLEDGE_CONTAINER'
-              value: 'grocery-knowledge'
+              value: knowledgeContainer
+            }
+            {
+              name: 'KNOWLEDGE_CONNECTION_NAME'
+              value: knowledgeConnectionName
             }
             {
               name: 'FOUNDRY_AGENT_PREFIX'
-              value: 'gsdr'
+              value: foundryAgentPrefix
             }
           ]
         }
       ]
       scale: {
         minReplicas: 1
-        maxReplicas: 2
+        // SSE streams, workflow state and approval gates are process-local.
+        maxReplicas: 1
       }
     }
   }
@@ -168,3 +225,5 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
 
 output appUrl string = 'https://${containerApp.properties.configuration.ingress.fqdn}'
 output appName string = containerApp.name
+output APP_URL string = 'https://${containerApp.properties.configuration.ingress.fqdn}'
+output AZURE_CONTAINER_APP_NAME string = containerApp.name

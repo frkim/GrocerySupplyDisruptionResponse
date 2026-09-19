@@ -1,0 +1,47 @@
+# yaml-language-server: $schema=https://aka.ms/azure-dev/v1.0.0/azure.yaml.json
+name: grocery-disruption-response
+requiredVersions:
+  azd: ">= 1.25.0"
+
+infra:
+  provider: bicep
+  path: infra
+  module: main
+
+services:
+  app:
+    project: .
+    language: docker
+    host: containerapp
+    module: app
+    apiVersion: '2024-03-01'
+    docker:
+      path: Dockerfile
+      context: .
+      remoteBuild: true
+
+hooks:
+  preprovision:
+    shell: pwsh
+    run: ./scripts/azd-hooks.ps1 -Phase preprovision
+    interactive: false
+  postprovision:
+    shell: pwsh
+    run: ./scripts/azd-hooks.ps1 -Phase postprovision
+    interactive: false
+  postdeploy:
+    shell: pwsh
+    run: ./scripts/azd-hooks.ps1 -Phase postdeploy
+    interactive: false
+
+pipeline:
+  provider: github
+  variables:
+    - AZURE_RESOURCE_GROUP
+    - CHAT_MODEL_NAME
+    - CHAT_MODEL_VERSION
+    - CHAT_MODEL_SKU
+    - CHAT_MODEL_CAPACITY
+    - MODEL_DEPLOYMENT_NAME
+    - EMBEDDING_DEPLOYMENT_NAME
+    - EMBEDDING_MODEL_CAPACITY

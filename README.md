@@ -91,6 +91,7 @@ Grounding comes from 17 function tools over the domain data and retrieval over t
 | `docs/` | Architecture, agent, orchestration, data, deployment, and extension documentation. |
 | `data/` | Bundled JSON seed datasets and the `data/knowledge` Markdown corpus. |
 | `infra/` | Bicep for Foundry, Azure OpenAI, Cosmos DB, Search, Storage, Container Apps, ACR, identity, and observability. |
+| `azure.yaml` | Azure Developer CLI service, remote build, deployment hooks, and pipeline configuration. |
 | `scripts/` | Provisioning, seeding, deployment, and verification helpers. |
 | `src/backend/` | FastAPI API, contracts, orchestration engine, agent runner, tools, data access, and A2A endpoints. |
 | `src/frontend/` | React control-room UI. |
@@ -130,44 +131,51 @@ python tests\test_end_to_end.py
 
 ## Full Azure provisioning, seed, and deploy
 
-```powershell
-az login
-az group create --name rg-grocery-disruption --location swedencentral
-az deployment group create `
-  --resource-group rg-grocery-disruption `
-  --name gsdr-core `
-  --template-file infra\main.bicep `
-  --parameters infra\main.parameters.json
+Install Azure Developer CLI (`azd` 1.25.0 or newer), PowerShell 7, and Python
+3.11 or newer. Builds run in Azure Container Registry; local Docker is not required.
 
-python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r src\backend\requirements.txt
-.\.venv\Scripts\python.exe scripts\seed.py
-pwsh .\scripts\deploy.ps1
+```powershell
+azd auth login --tenant-id 6d84d14b-2ff0-4d99-9ab1-fae089687459
+pwsh .\scripts\setup-azd.ps1
+azd up
 ```
+
+The setup command selects environment `grocery-disruption`, subscription
+`bb766161-890c-4a8e-9c63-981b510e4e38`, tenant
+`6d84d14b-2ff0-4d99-9ab1-fae089687459`, and region `swedencentral`.
+Override these with the script's `-EnvironmentName`, `-SubscriptionId`, `-TenantId`,
+and `-Location` parameters. These identifiers are configuration, not credentials.
+
+`azd up` provisions infrastructure and identity permissions, seeds Cosmos DB and
+Search/Blob knowledge, registers the Foundry agents, builds the image remotely,
+deploys the app, and verifies its public UI and API. This creates billable resources
+and requires model quota plus permission to assign roles. Review the changes first
+with `azd provision --preview`. See [deployment prerequisites and configuration](docs/06-deployment.md).
 
 ## Deployment workflows
 
 | Workflow | Purpose |
 | --- | --- |
-| `.github/workflows/ci.yml` | Restores dependencies from approved feeds, validates backend import/compile checks, builds the frontend, validates every seed dataset's referential integrity, builds the production container image, and runs the offline end-to-end verification harness. |
-| `.github/workflows/deploy.yml` | Builds the container image, deploys the Azure Container App, and verifies `/api/health`. |
+| `.github/workflows/ci.yml` | Builds the app and image, validates seed data and Bicep/azd configuration, and runs offline workflow and deployment-script tests. |
+| `.github/workflows/azure-dev.yml` | Runs `azd provision`, a runtime identity `AcrPull` visibility gate, then `azd deploy` using GitHub OIDC after CI succeeds on a push to `main`, or manually on `main`. |
 
-`deploy.yml` requires one repository secret named `AZURE_CREDENTIALS` containing the JSON output shape produced by `az ad sp create-for-rbac --sdk-auth`. Use placeholder values only in documentation:
+The split GitHub flow preserves the same provisioning and verification hooks as
+`azd up`, but waits for the runtime identity's ACR pull role before image deployment.
+The gate only reads Azure RBAC; it does not create identities or change assignments.
+Assignment visibility does not prove ACR data-plane token readiness or completed
+permission propagation; deployment and postdeploy checks must still succeed.
 
-```json
-{
-  "clientId": "00000000-0000-0000-0000-000000000000",
-  "client credential field omitted": "placeholder only",
-  "subscriptionId": "00000000-0000-0000-0000-000000000000",
-  "tenantId": "00000000-0000-0000-0000-000000000000",
-  "activeDirectoryEndpointUrl": "https://login.microsoftonline.com",
-  "resourceManagerEndpointUrl": "https://management.azure.com/",
-  "activeDirectoryGraphResourceId": "https://graph.windows.net/",
-  "sqlManagementEndpointUrl": "https://management.core.windows.net:8443/",
-  "galleryEndpointUrl": "https://gallery.azure.com/",
-  "managementEndpointUrl": "https://management.core.windows.net/"
-}
+Configure the GitHub federation once, from the selected azd environment:
+
+```powershell
+gh auth login
+azd pipeline config --provider github --auth-type federated --remote-name origin
 ```
+
+This command creates or configures a deployment identity, federation, Azure roles,
+and repository variables; review its prompts before approving. No `AZURE_CREDENTIALS`
+secret is needed. Detailed permissions, existing-identity setup, and manual trigger
+instructions are in [the deployment guide](docs/06-deployment.md#github-actions-with-oidc).
 
 ## Front-end URL
 
@@ -177,16 +185,14 @@ pwsh .\scripts\deploy.ps1
 | Local single-origin build or container | `http://localhost:8000` |
 | Deployed to Azure Container Apps | `https://<app-name>.<region-id>.azurecontainerapps.io` |
 
-The deployed value is not guessable ahead of time because Azure generates the region-unique ingress domain. Read the real URL from the `appUrl` deployment output after `deploy.yml` succeeds, or at any time with:
+After a successful deployment, retrieve the real front-end URL:
 
 ```powershell
-az deployment group show `
-  --resource-group rg-grocery-disruption `
-  --name gsdr-core `
-  --query properties.outputs.appUrl.value -o tsv
+azd env get-value APP_URL
 ```
 
-`deploy.yml` also prints the URL to the workflow run summary.
+GitHub Actions prints the verified URL in its run summary. There is no deployed
+address until provisioning and deployment succeed.
 
 ## Security note
 

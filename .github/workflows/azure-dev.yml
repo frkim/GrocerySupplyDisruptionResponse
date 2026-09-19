@@ -1,0 +1,131 @@
+name: Deploy with azd
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: [CI]
+    branches: [main]
+    types: [completed]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: azure-grocery-disruption
+  cancel-in-progress: false
+
+env:
+  AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+  AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+  AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+  AZURE_ENV_NAME: ${{ vars.AZURE_ENV_NAME }}
+  AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
+  AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+  CHAT_MODEL_NAME: ${{ vars.CHAT_MODEL_NAME }}
+  CHAT_MODEL_VERSION: ${{ vars.CHAT_MODEL_VERSION }}
+  CHAT_MODEL_SKU: ${{ vars.CHAT_MODEL_SKU }}
+  CHAT_MODEL_CAPACITY: ${{ vars.CHAT_MODEL_CAPACITY }}
+  MODEL_DEPLOYMENT_NAME: ${{ vars.MODEL_DEPLOYMENT_NAME }}
+  EMBEDDING_DEPLOYMENT_NAME: ${{ vars.EMBEDDING_DEPLOYMENT_NAME }}
+  EMBEDDING_MODEL_CAPACITY: ${{ vars.EMBEDDING_MODEL_CAPACITY }}
+  PIP_INDEX_URL: https://packagefeedproxy.microsoft.io/pypi/simple
+  PIP_DISABLE_PIP_VERSION_CHECK: '1'
+  AZURE_CORE_COLLECT_TELEMETRY: 'false'
+
+jobs:
+  deploy:
+    # Only trusted main-branch commits can mint the federated deployment token.
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      (github.event_name == 'workflow_dispatch' ||
+       (github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.event == 'push' &&
+        github.event.workflow_run.head_repository.full_name == github.repository))
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+      id-token: write
+    outputs:
+      appUrl: ${{ steps.endpoint.outputs.appUrl }}
+    steps:
+      - name: Checkout validated commit
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Validate pipeline configuration
+        shell: pwsh
+        run: |
+          foreach ($name in @('AZURE_CLIENT_ID', 'AZURE_TENANT_ID', 'AZURE_SUBSCRIPTION_ID', 'AZURE_ENV_NAME', 'AZURE_LOCATION')) {
+            if (-not [Environment]::GetEnvironmentVariable($name)) {
+              throw "Missing repository variable $name. Run azd pipeline config --provider github --auth-type federated."
+            }
+          }
+
+      - name: Install Azure Developer CLI
+        uses: Azure/setup-azd@v2.3.0
+        with:
+          version: 1.25.1
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Sign Azure CLI in with GitHub OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Sign azd in with GitHub OIDC
+        shell: pwsh
+        run: |
+          azd auth login --client-id $env:AZURE_CLIENT_ID --tenant-id $env:AZURE_TENANT_ID --federated-credential-provider github
+          if ($LASTEXITCODE -ne 0) { throw 'Federated Azure login failed.' }
+
+      - name: Configure deployment environment
+        shell: pwsh
+        run: |
+          ./scripts/setup-azd.ps1 -EnvironmentName $env:AZURE_ENV_NAME -SubscriptionId $env:AZURE_SUBSCRIPTION_ID -TenantId $env:AZURE_TENANT_ID -Location $env:AZURE_LOCATION
+
+      - name: Provision infrastructure and seed data
+        shell: pwsh
+        run: |
+          azd provision --no-prompt --environment $env:AZURE_ENV_NAME
+          if ($LASTEXITCODE -ne 0) { throw 'azd provision failed.' }
+
+      - name: Verify runtime identity AcrPull before image deployment
+        timeout-minutes: 6
+        shell: pwsh
+        run: |
+          $values = azd env get-values --output json --environment $env:AZURE_ENV_NAME
+          if ($LASTEXITCODE -ne 0 -or -not $values) { throw 'Cannot read provisioned azd outputs.' }
+          $outputs = ($values -join "`n") | ConvertFrom-Json -AsHashtable
+          foreach ($name in @('SERVICE_APP_IDENTITY_ID', 'AZURE_CONTAINER_REGISTRY_NAME', 'AZURE_RESOURCE_GROUP')) {
+            if (-not $outputs[$name]) { throw "Missing provisioned azd output $name." }
+          }
+          ./scripts/verify-acr-pull.ps1 -IdentityResourceId $outputs['SERVICE_APP_IDENTITY_ID'] -RegistryName $outputs['AZURE_CONTAINER_REGISTRY_NAME'] -ResourceGroup $outputs['AZURE_RESOURCE_GROUP'] -SubscriptionId $env:AZURE_SUBSCRIPTION_ID
+
+      - name: Build, deploy and verify application
+        shell: pwsh
+        run: |
+          azd deploy --no-prompt --environment $env:AZURE_ENV_NAME
+          if ($LASTEXITCODE -ne 0) { throw 'azd deploy failed.' }
+
+      - name: Publish verified application URL
+        id: endpoint
+        shell: pwsh
+        run: |
+          $url = azd env get-value APP_URL --environment $env:AZURE_ENV_NAME
+          if ($LASTEXITCODE -ne 0 -or -not $url) { throw 'APP_URL is missing from the deployment outputs.' }
+          "appUrl=$url" >> $env:GITHUB_OUTPUT
+          "### Grocery disruption response`n`nFront-end: [$url]($url)`n`nEnvironment: $env:AZURE_ENV_NAME`n`nAuthentication: GitHub OIDC (no client secret)." >> $env:GITHUB_STEP_SUMMARY
+
+      - name: Explain incomplete deployment
+        if: failure()
+        shell: pwsh
+        run: |
+          "### Deployment did not complete`n`nReview the failed step above. No verified front-end URL is being reported." >> $env:GITHUB_STEP_SUMMARY

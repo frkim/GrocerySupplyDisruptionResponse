@@ -12,14 +12,14 @@ import os
 import sys
 from pathlib import Path
 
-from azure.identity import DefaultAzureCredential
-from dotenv import load_dotenv
+if __package__:
+    from .deployment_hooks import TRANSIENT_STATUSES, retry_azure
+else:
+    from deployment_hooks import TRANSIENT_STATUSES, retry_azure
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data"
 KNOWLEDGE = DATA / "knowledge"
-
-load_dotenv(ROOT / ".env", override=False)
 
 CONTAINER_FILES = {
     "products": "products.json",
@@ -55,41 +55,43 @@ PARTITION_KEY_PATH = "/partitionKey"
 
 
 def seed_cosmos() -> None:
-    from azure.cosmos import CosmosClient, PartitionKey
+    from azure.cosmos import CosmosClient
+    from azure.identity import DefaultAzureCredential
 
     endpoint = os.environ["COSMOS_ENDPOINT"]
     database_name = os.getenv("COSMOS_DATABASE", "GroceryDisruptionDB")
 
-    client = CosmosClient(endpoint, credential=DefaultAzureCredential())
-    database = client.create_database_if_not_exists(id=database_name)
+    with DefaultAzureCredential() as credential, CosmosClient(endpoint, credential=credential) as client:
+        database = client.get_database_client(database_name)
+        retry_azure(database.read, f"Read Cosmos database {database_name}")
+        total = 0
+        for container_name, filename in CONTAINER_FILES.items():
+            path = DATA / filename
+            if not path.exists():
+                raise FileNotFoundError(f"Required seed file is missing: {path}")
 
-    total = 0
-    for container_name, filename in CONTAINER_FILES.items():
-        path = DATA / filename
-        if not path.exists():
-            raise FileNotFoundError(f"Required seed file is missing: {path}")
-
-        items = json.loads(path.read_text(encoding="utf-8"))
-        if not isinstance(items, list):
-            raise ValueError(f"{path} must contain a JSON array")
-
-        container = database.create_container_if_not_exists(
-            id=container_name,
-            partition_key=PartitionKey(path=PARTITION_KEY_PATH),
-        )
-        written = 0
-        for item in items:
-            if "id" not in item or "partitionKey" not in item:
+            items = json.loads(path.read_text(encoding="utf-8"))
+            if not isinstance(items, list):
+                raise ValueError(f"{path} must contain a JSON array")
+            if any(not isinstance(item, dict) or "id" not in item or "partitionKey" not in item for item in items):
                 raise ValueError(f"{path} contains an item without id or partitionKey")
-            container.upsert_item(item)
-            written += 1
-        total += written
-        print(f"  {container_name}: {written} documents")
+
+            # ARM owns databases/containers. Cosmos data-plane RBAC cannot create them.
+            container = database.get_container_client(container_name)
+            properties = retry_azure(container.read, f"Read Cosmos container {container_name}")
+            if properties.get("partitionKey", {}).get("paths") != [PARTITION_KEY_PATH]:
+                raise ValueError(f"Cosmos container {container_name} must use {PARTITION_KEY_PATH}")
+            for item in items:
+                retry_azure(lambda: container.upsert_item(item), f"Upsert Cosmos {container_name}/{item['id']}")
+            total += len(items)
+            print(f"  {container_name}: {len(items)} documents")
     print(f"Cosmos seeding complete: {total} documents.")
 
 
 def seed_search() -> None:
-    from azure.identity import get_bearer_token_provider
+    from contextlib import ExitStack
+
+    from azure.identity import DefaultAzureCredential, get_bearer_token_provider
     from azure.search.documents import SearchClient
     from azure.search.documents.indexes import SearchIndexClient
     from azure.search.documents.indexes.models import (
@@ -102,7 +104,6 @@ def seed_search() -> None:
         VectorSearch,
         VectorSearchProfile,
     )
-    from azure.core.exceptions import ResourceExistsError
     from azure.storage.blob import BlobServiceClient, ContentSettings
     from openai import AzureOpenAI
 
@@ -110,86 +111,124 @@ def seed_search() -> None:
     index_name = os.getenv("SEARCH_INDEX_NAME", "grocery-disruption-knowledge")
     blob_endpoint = os.environ["STORAGE_BLOB_ENDPOINT"]
     container_name = os.getenv("KNOWLEDGE_CONTAINER", "grocery-knowledge")
-    credential = DefaultAzureCredential()
+    with ExitStack() as stack:
+        credential = stack.enter_context(DefaultAzureCredential())
+        blob_service = stack.enter_context(BlobServiceClient(account_url=blob_endpoint, credential=credential))
+        blob_container = blob_service.get_container_client(container_name)
+        retry_azure(blob_container.get_container_properties, f"Read blob container {container_name}")
 
-    blob_service = BlobServiceClient(account_url=blob_endpoint, credential=credential)
-    blob_container = blob_service.get_container_client(container_name)
-    try:
-        blob_container.create_container()
-    except ResourceExistsError:
-        pass
-
-    documents = []
-    for path in _knowledge_paths():
-        text = path.read_text(encoding="utf-8")
-        blob_container.upload_blob(
-            name=path.name,
-            data=text.encode("utf-8"),
-            overwrite=True,
-            content_settings=ContentSettings(content_type="text/markdown; charset=utf-8"),
-        )
-        for position, chunk in enumerate(_chunk(text)):
-            documents.append(
-                {
-                    "id": f"{path.stem}-{position}".replace("_", "-"),
-                    "title": path.stem.replace("-", " "),
-                    "content": chunk,
-                    "sourceFile": path.name,
-                }
+        documents = []
+        for path in _knowledge_paths():
+            text = path.read_text(encoding="utf-8")
+            retry_azure(
+                lambda: blob_container.upload_blob(
+                    name=path.name,
+                    data=text.encode("utf-8"),
+                    overwrite=True,
+                    content_settings=ContentSettings(content_type="text/markdown; charset=utf-8"),
+                ),
+                f"Upload knowledge blob {path.name}",
             )
-    print(f"  uploaded {len(KNOWLEDGE_FILES)} knowledge documents to {container_name}")
-
-    index_client = SearchIndexClient(endpoint=endpoint, credential=credential)
-    fields = [
-        SimpleField(name="id", type=SearchFieldDataType.String, key=True),
-        SearchableField(name="title", type=SearchFieldDataType.String),
-        SearchableField(name="content", type=SearchFieldDataType.String),
-        SimpleField(name="sourceFile", type=SearchFieldDataType.String, filterable=True),
-        SearchField(
-            name="contentVector",
-            type=SearchFieldDataType.Collection(SearchFieldDataType.Single),
-            searchable=True,
-            vector_search_dimensions=3072,
-            vector_search_profile_name="default-profile",
-        ),
-    ]
-    index = SearchIndex(
-        name=index_name,
-        fields=fields,
-        vector_search=VectorSearch(
-            algorithms=[HnswAlgorithmConfiguration(name="default-algorithm")],
-            profiles=[
-                VectorSearchProfile(
-                    name="default-profile", algorithm_configuration_name="default-algorithm"
+            for position, chunk in enumerate(_chunk(text)):
+                documents.append(
+                    {
+                        "id": f"{path.stem}-{position}".replace("_", "-"),
+                        "title": path.stem.replace("-", " "),
+                        "content": chunk,
+                        "sourceFile": path.name,
+                    }
                 )
-            ],
-        ),
-    )
-    index_client.create_or_update_index(index)
-    print(f"  index '{index_name}' ready")
+        print(f"  uploaded {len(KNOWLEDGE_FILES)} knowledge documents to {container_name}")
 
-    token_provider = get_bearer_token_provider(
-        DefaultAzureCredential(), "https://cognitiveservices.azure.com/.default"
-    )
-    aoai = AzureOpenAI(
-        azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
-        azure_ad_token_provider=token_provider,
-        api_version=os.getenv("AZURE_OPENAI_API_VERSION", "2024-10-21"),
-    )
-    embedding_model = os.getenv("EMBEDDING_DEPLOYMENT_NAME", "text-embedding-3-large")
-
-    print(f"  embedding {len(documents)} chunks ...")
-    for batch_start in range(0, len(documents), 16):
-        batch = documents[batch_start : batch_start + 16]
-        response = aoai.embeddings.create(
-            model=embedding_model, input=[doc["content"] for doc in batch]
+        index_client = stack.enter_context(SearchIndexClient(endpoint=endpoint, credential=credential))
+        fields = [
+            SimpleField(name="id", type=SearchFieldDataType.String, key=True),
+            SearchableField(name="title", type=SearchFieldDataType.String),
+            SearchableField(name="content", type=SearchFieldDataType.String),
+            SimpleField(name="sourceFile", type=SearchFieldDataType.String, filterable=True),
+            SearchField(
+                name="contentVector",
+                type=SearchFieldDataType.Collection(SearchFieldDataType.Single),
+                searchable=True,
+                vector_search_dimensions=3072,
+                vector_search_profile_name="default-profile",
+            ),
+        ]
+        index = SearchIndex(
+            name=index_name,
+            fields=fields,
+            vector_search=VectorSearch(
+                algorithms=[HnswAlgorithmConfiguration(name="default-algorithm")],
+                profiles=[
+                    VectorSearchProfile(
+                        name="default-profile", algorithm_configuration_name="default-algorithm"
+                    )
+                ],
+            ),
         )
-        for doc, item in zip(batch, response.data):
-            doc["contentVector"] = item.embedding
+        retry_azure(lambda: index_client.create_or_update_index(index), f"Create/update Search index {index_name}")
+        print(f"  index '{index_name}' ready")
 
-    search_client = SearchClient(endpoint=endpoint, index_name=index_name, credential=credential)
-    search_client.upload_documents(documents=documents)
+        token_provider = get_bearer_token_provider(
+            credential, "https://cognitiveservices.azure.com/.default"
+        )
+        aoai = stack.enter_context(AzureOpenAI(
+            azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
+            azure_ad_token_provider=token_provider,
+            api_version=os.getenv("AZURE_OPENAI_API_VERSION", "2024-10-21"),
+        ))
+        embedding_model = os.getenv("EMBEDDING_DEPLOYMENT_NAME", "text-embedding-3-large")
+
+        print(f"  embedding {len(documents)} chunks ...")
+        for batch_start in range(0, len(documents), 16):
+            batch = documents[batch_start : batch_start + 16]
+            response = retry_azure(
+                lambda: aoai.embeddings.create(model=embedding_model, input=[doc["content"] for doc in batch]),
+                "Generate knowledge embeddings",
+            )
+            if len(response.data) != len(batch) or {item.index for item in response.data} != set(range(len(batch))):
+                raise ValueError("Embedding response does not match the requested batch.")
+            for item in response.data:
+                if len(item.embedding) != 3072:
+                    raise ValueError("Embedding deployment must produce 3072-dimensional vectors.")
+                batch[item.index]["contentVector"] = item.embedding
+
+        search_client = stack.enter_context(SearchClient(endpoint=endpoint, index_name=index_name, credential=credential))
+        upload_search_documents(search_client, documents)
     print(f"Search seeding complete: {len(documents)} chunks indexed.")
+
+
+class SearchUploadError(RuntimeError):
+    def __init__(self, failures):
+        self.status_code = next(
+            (result.status_code for result in failures if result.status_code not in TRANSIENT_STATUSES),
+            failures[0].status_code,
+        )
+        detail = "; ".join(
+            f"{result.key}: HTTP {result.status_code} {result.error_message or ''}" for result in failures
+        )
+        super().__init__("Search document upload failed: " + detail)
+
+
+def upload_search_documents(client, documents: list[dict]) -> None:
+    pending = {document["id"]: document for document in documents}
+    if not pending or len(pending) != len(documents):
+        raise ValueError("Search upload requires nonempty documents with unique IDs.")
+
+    def upload():
+        results = client.upload_documents(documents=list(pending.values()))
+        if len(results) != len(pending) or {result.key for result in results} != set(pending):
+            raise RuntimeError("Search upload did not return a result for every document.")
+        failures = []
+        for result in results:
+            if result.succeeded:
+                del pending[result.key]
+            else:
+                failures.append(result)
+        if failures:
+            raise SearchUploadError(failures)
+
+    retry_azure(upload, "Upload Search documents")
 
 
 def _knowledge_paths() -> list[Path]:
@@ -215,11 +254,32 @@ def _chunk(text: str, size: int = 1400) -> list[str]:
     return chunks
 
 
-if __name__ == "__main__":
-    target = sys.argv[1] if len(sys.argv) > 1 else "all"
+def main(argv: list[str] | None = None) -> int:
+    import argparse
+
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("target", nargs="?", choices=("all", "cosmos", "search"), default="all")
+    target = parser.parse_args(argv).target
+    if not os.getenv("GSDR_AZD_HOOK"):
+        from dotenv import load_dotenv
+
+        load_dotenv(ROOT / ".env", override=False)
+    required = []
+    if target in ("all", "cosmos"):
+        required.append("COSMOS_ENDPOINT")
+    if target in ("all", "search"):
+        required.extend(("SEARCH_ENDPOINT", "STORAGE_BLOB_ENDPOINT", "AZURE_OPENAI_ENDPOINT"))
+    missing = [key for key in required if not os.getenv(key, "").strip()]
+    if missing:
+        raise ValueError("Missing seed configuration: " + ", ".join(missing))
     if target in ("all", "cosmos"):
         print("Seeding Cosmos DB ...")
         seed_cosmos()
     if target in ("all", "search"):
         print("Seeding Blob Storage and Azure AI Search ...")
         seed_search()
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

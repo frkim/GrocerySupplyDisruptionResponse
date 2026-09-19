@@ -16,15 +16,25 @@ You author Azure infrastructure as Bicep for the Grocery Supply Disruption Respo
 
 ## Resource naming
 
-Use the `gsdr` Bicep resource token prefix, core deployment name `gsdr-core`, image repository `grocery-disruption`, Cosmos database `GroceryDisruptionDB`, Search index `grocery-disruption-knowledge`, blob container `grocery-knowledge`, and Foundry agent prefix `gsdr`.
+Use the `gsdr` Bicep resource token prefix, Cosmos database `GroceryDisruptionDB`,
+Search index `grocery-disruption-knowledge`, blob container `grocery-knowledge`,
+and Foundry agent prefix `gsdr`. The subscription entry point is `infra/main.bicep`;
+the existing core resources live in `infra/core.bicep`. Resource group and
+service discovery must retain the azd tags.
 
 ## Required outputs
 
-Emit outputs for every endpoint the application needs: Foundry project endpoint, Azure OpenAI endpoint, Cosmos endpoint, Search endpoint, Storage blob endpoint, Application Insights connection string, ACR login server, Container Apps environment id, managed identity id, and managed identity client id.
+Emit uppercase azd outputs for all application endpoints, ACR discovery and
+`APP_URL`. Never output the runtime identity client ID as `AZURE_CLIENT_ID`:
+that name belongs to the pipeline's federated deployment identity.
 
 ## RBAC
 
-Assign least-privilege roles for image pull, Foundry and Azure OpenAI use, Search data access, Search service operations needed by seeding, Storage blob data access, and Cosmos DB data access. The application must authenticate through `DefaultAzureCredential`.
+Assign least-privilege roles for image pull, Foundry and Azure OpenAI use, Search
+data access, Storage blob access, and Cosmos DB data access. Give the deployment
+principal the data-plane roles needed by seeding and agent registration, separate
+from the runtime managed identity. Keep one app replica until the process-local
+run registry and human approval futures are externalized.
 
 ## Quality bar
 

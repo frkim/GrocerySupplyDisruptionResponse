@@ -1,97 +1,241 @@
-# Deployment
+# Deploy with Azure Developer CLI
 
-## Provisioning with Bicep
+The local command and GitHub Actions both use `azure.yaml`, the same Bicep
+templates, and the same provisioning and verification hooks. No service-principal
+password is needed.
 
-The long-lived deployment uses the product naming defaults from the design specification: resource group `rg-grocery-disruption`, core deployment `gsdr-core`, image repository `grocery-disruption`, Cosmos database `GroceryDisruptionDB`, Search index `grocery-disruption-knowledge`, blob container `grocery-knowledge`, Foundry agent prefix `gsdr`, and Bicep token prefix `gsdr`.
+## Prerequisites and cost
 
-```powershell
-az login
-az group create --name rg-grocery-disruption --location swedencentral
-az deployment group create `
-  --resource-group rg-grocery-disruption `
-  --name gsdr-core `
-  --template-file infra\main.bicep `
-  --parameters infra\main.parameters.json
-```
+- Azure Developer CLI (`azd`) 1.25.0 or newer, PowerShell 7, and Python 3.11+.
+- Azure CLI for the GitHub pre-deploy RBAC gate and Bicep validation; GitHub CLI for pipeline setup.
+- An authenticated identity in the target tenant with subscription resource
+  deployment rights and `Microsoft.Authorization/roleAssignments/write`.
+  Contributor alone cannot create the required role assignments.
+- Available Foundry chat and embedding models and sufficient quota in the selected
+  region. Defaults are configurable; a successful template build does not prove quota.
+- Access to the organization-protected package feeds. The Docker build and CI use
+  `https://packagefeedproxy.microsoft.io/npm/` and
+  `https://packagefeedproxy.microsoft.io/pypi/simple`.
 
-The core deployment provisions managed identity, Azure Container Registry, Container Apps environment, Foundry/Azure OpenAI resources, Cosmos DB, Azure AI Search, Storage, Application Insights, Log Analytics, and RBAC.
+Provisioning creates billable Container Apps, ACR, Cosmos DB shared throughput,
+AI Search, Foundry model deployments, Blob Storage, and observability resources.
+This is a public-endpoint **demonstration**, not a production security baseline.
+Only fictional data should be uploaded. The UI/API has no application-level user
+authentication; restrict ingress or add authentication before exposing sensitive data.
+Azure resource access uses managed identity and resource-scoped RBAC.
 
-## Seed Cosmos DB and Azure AI Search
+## Local deployment
 
-After core provisioning, seed the 14 JSON datasets into Cosmos DB and index the 8 knowledge documents into Azure AI Search:
-
-```powershell
-python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r src\backend\requirements.txt
-.\.venv\Scripts\python.exe scripts\seed.py
-```
-
-The seed path is idempotent: records are upserted by `id`, and knowledge chunks are created from `data\knowledge\*.md` for the `grocery-disruption-knowledge` index.
-
-## Container build and application deployment
-
-The application is one container. The frontend is built first, copied into the backend static directory, and served by FastAPI from the same origin as the API.
+From the repository root:
 
 ```powershell
-pwsh .\scripts\deploy.ps1
+azd auth login --tenant-id 6d84d14b-2ff0-4d99-9ab1-fae089687459
+pwsh .\scripts\setup-azd.ps1
+azd provision --preview
+azd up
 ```
 
-The deployment script is expected to read `gsdr-core` outputs, build the image in ACR using the `grocery-disruption` repository, deploy `infra\app.bicep`, and emit the Container App URL.
+`setup-azd.ps1` only creates/selects local azd configuration; it does not provision
+resources or change the Azure CLI account. Its defaults are:
 
-## GitHub workflows
-
-| Workflow | Responsibility |
+| Setting | Value |
 | --- | --- |
-| `.github/workflows/ci.yml` | Local-safe validation: backend import/compile, frontend dependency restore, `npm run build`, and tests that do not require credentials. |
-| `.github/workflows/deploy.yml` | Azure login, read `gsdr-core` outputs, build the image, deploy the Container App, and poll `/api/health`. |
+| Environment | `grocery-disruption` |
+| Subscription | `bb766161-890c-4a8e-9c63-981b510e4e38` |
+| Tenant | `6d84d14b-2ff0-4d99-9ab1-fae089687459` |
+| Region | `swedencentral` |
+| Default resource group | `rg-grocery-disruption` |
 
-`deploy.yml` requires a single repository secret, `AZURE_CREDENTIALS`, containing this placeholder JSON shape from `az ad sp create-for-rbac --sdk-auth`:
-
-```json
-{
-  "clientId": "00000000-0000-0000-0000-000000000000",
-  "client credential field omitted": "placeholder only",
-  "subscriptionId": "00000000-0000-0000-0000-000000000000",
-  "tenantId": "00000000-0000-0000-0000-000000000000",
-  "activeDirectoryEndpointUrl": "https://login.microsoftonline.com",
-  "resourceManagerEndpointUrl": "https://management.azure.com/",
-  "activeDirectoryGraphResourceId": "https://graph.windows.net/",
-  "sqlManagementEndpointUrl": "https://management.core.windows.net:8443/",
-  "galleryEndpointUrl": "https://gallery.azure.com/",
-  "managementEndpointUrl": "https://management.core.windows.net/"
-}
-```
-
-Never commit a real value. Store the JSON only as the GitHub secret.
-
-## Finding the deployed front-end URL
-
-Use one of these approaches after deployment:
+Use a different isolated environment or region with:
 
 ```powershell
-az containerapp list --resource-group rg-grocery-disruption --query "[].{name:name,url:properties.configuration.ingress.fqdn}" -o table
+pwsh .\scripts\setup-azd.ps1 -EnvironmentName grocery-test -Location swedencentral
+azd up --environment grocery-test
 ```
 
-or inspect the deployment output from the app deployment:
+Pass `-SubscriptionId` and `-TenantId` to change the Azure target; sign in to the
+corresponding tenant first. `.azure/` environment state remains git-ignored.
+The original `pwsh .\scripts\deploy.ps1` command is a compatibility wrapper around
+setup followed by `azd up`, not a second independent deployment implementation.
+
+## What azd does
+
+| Phase | Behavior |
+| --- | --- |
+| Preprovision | Checks/sets up Python dependencies needed for deployment hooks. |
+| Provision | Creates the resource group, core services, identities, and resource-scoped data roles. |
+| Postprovision | Upserts the 14 datasets, uploads/indexes the 8 knowledge documents, and registers Foundry agents. Errors fail the deployment rather than claiming readiness. |
+| Build and deploy | Builds the root Dockerfile using ACR remote build, then applies `infra/app.bicep` with the real image and app configuration in one revision. |
+| Postdeploy | Polls and checks the real frontend, health endpoint, and scenario before reporting a verified URL. |
+
+The runtime identity and the deployment identity are separate. Deployment needs
+data-plane access to seed Cosmos/Search/Storage and manage Foundry definitions;
+Azure management-plane Contributor is not enough. Bicep grants those roles to
+the deployment principal resolved by azd as `AZURE_PRINCIPAL_ID`. Do not set that
+to a client/application ID or copy a developer's object ID into CI.
+
+The app uses azd's revision-based deployment. `infra/main.bicep` intentionally
+does not deploy the Container App; `infra/app.parameters.json` receives the new
+`SERVICE_APP_IMAGE_NAME` during `azd deploy`. This avoids a broken placeholder on
+first deployment and prevents infrastructure provisioning from resetting a live
+app to an old image, including on fresh GitHub runners.
+
+The app stays at one replica because runs, SSE streams, and approval futures live
+in process memory. Before scaling out, externalize that state; adding replicas
+alone can send approvals to the wrong process. A deployment/restart also interrupts
+active runs. Use a maintenance window for demonstrations in progress.
+
+The bundled files support offline development. Azure deployment is not considered
+successful merely because the app can silently fall back to bundled data.
+Postprovision seeding and agent registration must succeed.
+
+## Configuration
+
+Environment values can be changed without editing infrastructure:
 
 ```powershell
-az deployment group show `
-  --resource-group rg-grocery-disruption `
-  --name <app-deployment-name> `
-  --query properties.outputs.appUrl.value -o tsv
+azd env set CHAT_MODEL_CAPACITY 30
+azd env set EMBEDDING_MODEL_CAPACITY 10
+azd env set AZURE_RESOURCE_GROUP rg-grocery-disruption
+azd up
 ```
 
-Open the returned HTTPS URL. The same host serves the UI, `/api/health`, `/api/scenario`, `/api/runs/stream`, and A2A endpoints.
+Use `CHAT_MODEL_NAME`, `CHAT_MODEL_VERSION`, `CHAT_MODEL_SKU`, and
+`MODEL_DEPLOYMENT_NAME` to select a supported chat model/deployment. Check
+regional availability and quota before changing them. `EMBEDDING_DEPLOYMENT_NAME`
+changes the embedding deployment's name, not its vector dimensions. The knowledge
+index and current seed script expect 3072-dimensional `text-embedding-3-large`
+vectors; changing the embedding model requires a corresponding index migration.
+
+After infrastructure exists, `azd deploy` rebuilds/redeploys just the application.
+Run `azd provision` for infrastructure, seed data, knowledge, or agent definition
+updates so the postprovision hook also runs.
+
+## GitHub Actions with OIDC
+
+The workflow is `.github/workflows/azure-dev.yml`. It runs after CI succeeds for
+a trusted push to `main`, and supports manual dispatch from `main`. Pull requests
+cannot run the Azure deployment job. It checks out the commit that passed CI,
+uses GitHub OIDC to sign both azd and Azure CLI into the same subscription, and runs
+`azd provision --no-prompt`, the `scripts/verify-acr-pull.ps1` gate, then
+`azd deploy --no-prompt`. The split flow retains the same provisioning, seeding,
+build, and verification hooks as `azd up`.
+Manual dispatch intentionally permits an operator to rerun deployment.
+
+Provisioning creates the user-assigned runtime identity and ACR, **not** a
+placeholder Container App. The gate reads `SERVICE_APP_IDENTITY_ID`,
+`AZURE_CONTAINER_REGISTRY_NAME`, and `AZURE_RESOURCE_GROUP` from the selected azd
+environment's outputs. It resolves the identity's principal ID and polls for the
+built-in `AcrPull` role at the exact registry scope for up to five minutes.
+This avoids starting a revision while its required pull assignment is not visible.
+Azure CLI errors, missing outputs, a subscription mismatch, or an absent role
+block deployment. A six-minute workflow step timeout also bounds stalled CLI calls.
+The check requires read access to the identity, registry, and role assignments;
+it never queries Microsoft Graph or writes role assignments.
+Role visibility is a management-plane check, not proof of completed RBAC
+propagation, ACR data-plane token readiness, or a successful image pull. Cached
+authorization and token issuance can still lag behind the visible assignment;
+the deployment and postdeploy checks must still succeed.
+
+From the already configured local azd environment:
+
+```powershell
+gh auth login
+azd pipeline config --provider github --auth-type federated --remote-name origin
+```
+
+Review the prompts: this operation can create an Entra application/service
+principal, configure federation, grant Azure roles, set GitHub variables, and
+offer to commit/push changes. It requires the relevant directory permissions and
+repository administration rights. Its default Azure grants include Contributor
+and User Access Administrator at subscription scope. Follow your organization's
+approval process rather than granting subscription-wide access without review.
+
+For an existing organization-approved deployment application, supply its
+**application/client ID** (not its object ID):
+
+```powershell
+azd pipeline config --provider github --auth-type federated --remote-name origin `
+  --principal-id <approved-application-client-id>
+```
+
+An administrator can instead preconfigure narrowly scoped access and federation:
+issuer `https://token.actions.githubusercontent.com`, audience
+`api://AzureADTokenExchange`, subject
+`repo:frkim/GrocerySupplyDisruptionResponse:ref:refs/heads/main`.
+This workflow does not use a GitHub environment; if one is added, its federation
+subject must change to match. Subscription-scoped template deployments and
+resource-group creation still require appropriate subscription control-plane
+permissions even when most resource permissions are scoped to the group.
+
+These repository **Actions variables**, not JSON secrets, are required:
+
+| Variable | Purpose |
+| --- | --- |
+| `AZURE_CLIENT_ID` | Federated deployment application's client ID |
+| `AZURE_TENANT_ID` | Target tenant ID |
+| `AZURE_SUBSCRIPTION_ID` | Target subscription ID |
+| `AZURE_ENV_NAME` | Same environment name used locally |
+| `AZURE_LOCATION` | Deployment region |
+
+Optional variables mirror model settings above plus `AZURE_RESOURCE_GROUP`;
+`azure.yaml` lists them for `azd pipeline config`. Re-run configuration or update
+the GitHub variables after changing local settings. Never export
+`SERVICE_APP_IMAGE_NAME` as a fixed pipeline variable; the deployment must preserve
+the actual current image during reprovisioning.
+
+The previous `AZURE_CREDENTIALS` secret-based workflow is replaced, not run
+alongside the OIDC workflow. Do not reuse previously exposed client secrets.
+Once the workflow is on `main` and federation is configured:
+
+```powershell
+gh workflow run azure-dev.yml --repo frkim/GrocerySupplyDisruptionResponse --ref main
+gh run list --repo frkim/GrocerySupplyDisruptionResponse --workflow azure-dev.yml
+```
+
+CI independently builds the app/image, compiles Bicep, parses the azd project and
+PowerShell scripts, validates seed data, and runs offline workflow and deployment
+helper tests. Passing CI is not evidence that Azure quota, RBAC, or live inference
+has been verified.
+
+## Front-end URL
+
+After `azd up` succeeds:
+
+```powershell
+azd env get-value APP_URL
+```
+
+For a deployment created by CI, refresh the same local azd environment first:
+
+```powershell
+azd env refresh --environment grocery-disruption
+azd env get-value APP_URL --environment grocery-disruption
+```
+
+The successful GitHub run also publishes the verified URL in its summary.
+The same HTTPS origin serves the frontend, API, and A2A endpoints. No real URL
+can be supplied until the resources and application have been deployed.
 
 ## Troubleshooting
 
-| Symptom | Likely cause | Check | Fix |
-| --- | --- | --- | --- |
-| `/api/health` does not return 200 | Container revision did not start | Container App logs and revision status | Fix startup exception, rebuild, redeploy. |
-| `openAiConfigured` is false | Azure OpenAI endpoint not passed to app | App environment variables from deployment outputs | Redeploy `infra\app.bicep` with `openAiEndpoint`. |
-| Data source is local in Azure | Cosmos endpoint or RBAC missing | `COSMOS_ENDPOINT`, `GroceryDisruptionDB`, managed identity roles | Correct outputs or role assignment, restart revision. |
-| Knowledge source is local | Search endpoint, index, or role missing | `SEARCH_ENDPOINT`, `grocery-disruption-knowledge`, Search roles | Rerun seed and verify Search permissions. |
-| Foundry agents use fallback | Foundry endpoint, agent provisioning, or project role issue | `/api/foundry/agents` and startup logs | Re-provision agents and verify `gsdr` prefix resources. |
-| A2A nodes fail | `SELF_BASE_URL` does not resolve inside container | Logs from `/a2a/{agent_name}` calls | Use `http://127.0.0.1:8000` for same-container topology. |
-| Gate appears stuck | Run is awaiting executive input | Latest SSE event is `gate_awaiting` | Submit `POST /api/runs/{run_id}/decision` or wait for timeout. |
-| Workflow login fails | `AZURE_CREDENTIALS` missing or malformed | GitHub Actions secret configuration | Replace with valid sdk-auth JSON in the secret store only. |
+| Symptom | Action |
+| --- | --- |
+| Missing repository variables | Configure the pipeline or set the five required Actions variables; the workflow fails before provisioning. |
+| OIDC login rejected | Check tenant/client ID and exact federation subject; use the trusted `main` branch. |
+| Role assignment denied | Ask an administrator for the required role-assignment rights at the deployment scope. |
+| AcrPull gate fails | Inspect the reported runtime principal and ACR scope, verify the provisioned `AcrPull` assignment and deployment identity's read access, and allow propagation before rerunning. The gate does not repair roles or require an existing Container App. |
+| Seed operation returns 403 | Verify the deployment principal's data roles and allow RBAC propagation; hooks retry bounded transient failures, then stop. |
+| Model deployment fails | Check current model/version/SKU availability and TPM quota in the region; adjust model parameters before retrying. |
+| ACR remote build fails | Review ACR task logs and protected feed access; do not substitute public package registries. |
+| Foundry provisioning fails | Check Foundry project permissions, model deployment and knowledge connection; do not treat fallback inference as successful agent registration. |
+| Postdeploy fails | Inspect Container App revision logs and environment variables; a successful ARM deployment alone is insufficient. |
+| Local browser refuses connection | Run both local servers from the README; provisioning Azure does not start localhost servers. |
+
+## References
+
+- [Azure Developer CLI schema](https://learn.microsoft.com/azure/developer/azure-developer-cli/azd-schema)
+- [ACR remote builds](https://learn.microsoft.com/azure/developer/azure-developer-cli/remote-builds)
+- [GitHub OIDC pipeline setup](https://learn.microsoft.com/azure/developer/azure-developer-cli/pipeline-github-actions)
+- [Azure CLI OIDC login](https://learn.microsoft.com/azure/developer/github/connect-from-azure-openid-connect)
+- [Role assignment listing without Graph queries](https://learn.microsoft.com/cli/azure/role/assignment#az-role-assignment-list)
