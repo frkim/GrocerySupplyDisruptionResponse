@@ -1,0 +1,207 @@
+[
+  {
+    "id": "STK-001",
+    "partitionKey": "stakeholders",
+    "name": "Hélène Marchand",
+    "role": "Supply Chain Director",
+    "function": "supply-chain",
+    "decisionAuthority": "approve-allocation",
+    "escalationLevel": 2,
+    "email": "helene.marchand@vivalis.example",
+    "regionsCovered": [
+      "NORTH",
+      "CENTRE"
+    ],
+    "notes": "Named approver for Vivalis egg-shortage response."
+  },
+  {
+    "id": "STK-002",
+    "partitionKey": "stakeholders",
+    "name": "Marc Bellier",
+    "role": "Head of Grocery Merchandising",
+    "function": "merchandising",
+    "decisionAuthority": "pause-promotions",
+    "escalationLevel": 2,
+    "email": "marc.bellier@vivalis.example",
+    "regionsCovered": [
+      "NORTH",
+      "SOUTH",
+      "EAST",
+      "WEST",
+      "CENTRE"
+    ],
+    "notes": "Named approver for Vivalis egg-shortage response."
+  },
+  {
+    "id": "STK-003",
+    "partitionKey": "stakeholders",
+    "name": "Sofia Laurent",
+    "role": "Store Operations Director",
+    "function": "store-operations",
+    "decisionAuthority": "set-store-limits",
+    "escalationLevel": 2,
+    "email": "sofia.laurent@vivalis.example",
+    "regionsCovered": [
+      "NORTH",
+      "SOUTH",
+      "EAST",
+      "WEST",
+      "CENTRE"
+    ],
+    "notes": "Named approver for Vivalis egg-shortage response."
+  },
+  {
+    "id": "STK-004",
+    "partitionKey": "stakeholders",
+    "name": "Jonas Weber",
+    "role": "Finance Director",
+    "function": "finance",
+    "decisionAuthority": "approve-cost-overrun",
+    "escalationLevel": 3,
+    "email": "jonas.weber@vivalis.example",
+    "regionsCovered": [
+      "NORTH",
+      "SOUTH",
+      "EAST",
+      "WEST",
+      "CENTRE"
+    ],
+    "notes": "Named approver for Vivalis egg-shortage response."
+  },
+  {
+    "id": "STK-005",
+    "partitionKey": "stakeholders",
+    "name": "Amina Roussel",
+    "role": "Quality and Food Safety Director",
+    "function": "quality",
+    "decisionAuthority": "release-importer-or-recipe",
+    "escalationLevel": 3,
+    "email": "amina.roussel@vivalis.example",
+    "regionsCovered": [
+      "NORTH",
+      "SOUTH",
+      "EAST",
+      "WEST",
+      "CENTRE"
+    ],
+    "notes": "Named approver for Vivalis egg-shortage response."
+  },
+  {
+    "id": "STK-006",
+    "partitionKey": "stakeholders",
+    "name": "Claire Devaux",
+    "role": "Corporate Communications Lead",
+    "function": "communications",
+    "decisionAuthority": "approve-customer-message",
+    "escalationLevel": 2,
+    "email": "claire.devaux@vivalis.example",
+    "regionsCovered": [
+      "NORTH",
+      "SOUTH",
+      "EAST",
+      "WEST",
+      "CENTRE"
+    ],
+    "notes": "Named approver for Vivalis egg-shortage response."
+  },
+  {
+    "id": "STK-007",
+    "partitionKey": "stakeholders",
+    "name": "Nicolas Armand",
+    "role": "Legal Counsel",
+    "function": "legal",
+    "decisionAuthority": "approve-compliance-position",
+    "escalationLevel": 3,
+    "email": "nicolas.armand@vivalis.example",
+    "regionsCovered": [
+      "NORTH",
+      "SOUTH",
+      "EAST",
+      "WEST",
+      "CENTRE"
+    ],
+    "notes": "Named approver for Vivalis egg-shortage response."
+  },
+  {
+    "id": "STK-008",
+    "partitionKey": "stakeholders",
+    "name": "Elise Fournier",
+    "role": "Chief Operating Officer",
+    "function": "executive",
+    "decisionAuthority": "executive-gate",
+    "escalationLevel": 4,
+    "email": "elise.fournier@vivalis.example",
+    "regionsCovered": [
+      "NORTH",
+      "SOUTH",
+      "EAST",
+      "WEST",
+      "CENTRE"
+    ],
+    "notes": "Named approver for Vivalis egg-shortage response."
+  },
+  {
+    "id": "STK-009",
+    "partitionKey": "stakeholders",
+    "name": "Romain Kervel",
+    "role": "Regional Director North",
+    "function": "store-operations",
+    "decisionAuthority": "regional-execution",
+    "escalationLevel": 1,
+    "email": "romain.kervel@vivalis.example",
+    "regionsCovered": [
+      "NORTH"
+    ],
+    "notes": "Named approver for Vivalis egg-shortage response."
+  },
+  {
+    "id": "STK-010",
+    "partitionKey": "stakeholders",
+    "name": "Manon Vidal",
+    "role": "Regional Director South",
+    "function": "store-operations",
+    "decisionAuthority": "regional-execution",
+    "escalationLevel": 1,
+    "email": "manon.vidal@vivalis.example",
+    "regionsCovered": [
+      "SOUTH"
+    ],
+    "notes": "Named approver for Vivalis egg-shortage response."
+  },
+  {
+    "id": "STK-011",
+    "partitionKey": "stakeholders",
+    "name": "Luc Moreau",
+    "role": "Logistics Director",
+    "function": "supply-chain",
+    "decisionAuthority": "book-emergency-transport",
+    "escalationLevel": 2,
+    "email": "luc.moreau@vivalis.example",
+    "regionsCovered": [
+      "NORTH",
+      "SOUTH",
+      "EAST",
+      "WEST",
+      "CENTRE"
+    ],
+    "notes": "Named approver for Vivalis egg-shortage response."
+  },
+  {
+    "id": "STK-012",
+    "partitionKey": "stakeholders",
+    "name": "Inès Caron",
+    "role": "Responsible Sourcing Manager",
+    "function": "quality",
+    "decisionAuthority": "welfare-exception-review",
+    "escalationLevel": 2,
+    "email": "ines.caron@vivalis.example",
+    "regionsCovered": [
+      "NORTH",
+      "SOUTH",
+      "EAST",
+      "WEST",
+      "CENTRE"
+    ],
+    "notes": "Named approver for Vivalis egg-shortage response."
+  }
+]

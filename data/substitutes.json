@@ -1,0 +1,202 @@
+[
+  {
+    "id": "SUB-EGG-0001-A",
+    "partitionKey": "substitutes",
+    "productId": "SKU-EGG-0001",
+    "substituteProductId": "SKU-EGG-0005",
+    "substituteName": "Barn Eggs Medium x6 Value",
+    "substitutionType": "like-for-like",
+    "conversionRatio": 1,
+    "availabilityCasesPerWeek": 18800,
+    "priceDeltaPct": 18.0,
+    "customerAcceptanceScore": 0.72,
+    "labellingChangeRequired": false,
+    "allergenImpact": "none",
+    "leadTimeDays": 5,
+    "constraints": [
+      "quality-approval",
+      "customer-signage"
+    ],
+    "notes": "Substitution option for crisis response."
+  },
+  {
+    "id": "SUB-EGG-0001-B",
+    "partitionKey": "substitutes",
+    "productId": "SKU-EGG-0001",
+    "substituteProductId": "SKU-EGG-0002",
+    "substituteName": "Barn Eggs Medium x10",
+    "substitutionType": "format-change",
+    "conversionRatio": 0.6,
+    "availabilityCasesPerWeek": 18800,
+    "priceDeltaPct": 18.0,
+    "customerAcceptanceScore": 0.72,
+    "labellingChangeRequired": false,
+    "allergenImpact": "recipe-label-change",
+    "leadTimeDays": 5,
+    "constraints": [
+      "quality-approval",
+      "customer-signage"
+    ],
+    "notes": "Substitution option for crisis response."
+  },
+  {
+    "id": "SUB-EGG-0003-A",
+    "partitionKey": "substitutes",
+    "productId": "SKU-EGG-0003",
+    "substituteProductId": "SKU-EGG-0006",
+    "substituteName": "Organic Eggs Mixed Size x10",
+    "substitutionType": "format-change",
+    "conversionRatio": 0.6,
+    "availabilityCasesPerWeek": 18800,
+    "priceDeltaPct": 18.0,
+    "customerAcceptanceScore": 0.72,
+    "labellingChangeRequired": false,
+    "allergenImpact": "recipe-label-change",
+    "leadTimeDays": 5,
+    "constraints": [
+      "quality-approval",
+      "customer-signage"
+    ],
+    "notes": "Substitution option for crisis response."
+  },
+  {
+    "id": "SUB-EGG-0008-A",
+    "partitionKey": "substitutes",
+    "productId": "SKU-EGG-0008",
+    "substituteProductId": "SKU-EGG-0002",
+    "substituteName": "Barn Eggs Medium x10",
+    "substitutionType": "format-change",
+    "conversionRatio": 0.6,
+    "availabilityCasesPerWeek": 18800,
+    "priceDeltaPct": 18.0,
+    "customerAcceptanceScore": 0.72,
+    "labellingChangeRequired": false,
+    "allergenImpact": "recipe-label-change",
+    "leadTimeDays": 5,
+    "constraints": [
+      "quality-approval",
+      "customer-signage"
+    ],
+    "notes": "Substitution option for crisis response."
+  },
+  {
+    "id": "SUB-BAK-0101-A",
+    "partitionKey": "substitutes",
+    "productId": "SKU-BAK-0101",
+    "substituteProductId": "SKU-ALT-0001",
+    "substituteName": "Plant-Based Egg Replacer 1kg",
+    "substitutionType": "plant-based",
+    "conversionRatio": 1,
+    "availabilityCasesPerWeek": 18800,
+    "priceDeltaPct": 18.0,
+    "customerAcceptanceScore": 0.72,
+    "labellingChangeRequired": true,
+    "allergenImpact": "recipe-label-change",
+    "leadTimeDays": 5,
+    "constraints": [
+      "quality-approval",
+      "customer-signage"
+    ],
+    "notes": "Substitution option for crisis response."
+  },
+  {
+    "id": "SUB-BAK-0102-A",
+    "partitionKey": "substitutes",
+    "productId": "SKU-BAK-0102",
+    "substituteProductId": "SKU-ALT-0001",
+    "substituteName": "Plant-Based Egg Replacer 1kg",
+    "substitutionType": "plant-based",
+    "conversionRatio": 1,
+    "availabilityCasesPerWeek": 18800,
+    "priceDeltaPct": 18.0,
+    "customerAcceptanceScore": 0.72,
+    "labellingChangeRequired": true,
+    "allergenImpact": "recipe-label-change",
+    "leadTimeDays": 5,
+    "constraints": [
+      "quality-approval",
+      "customer-signage"
+    ],
+    "notes": "Substitution option for crisis response."
+  },
+  {
+    "id": "SUB-BAK-0103-A",
+    "partitionKey": "substitutes",
+    "productId": "SKU-BAK-0103",
+    "substituteProductId": "SKU-EGG-0009",
+    "substituteName": "Pasteurised Liquid Whole Egg 5kg",
+    "substitutionType": "liquid-egg",
+    "conversionRatio": 1,
+    "availabilityCasesPerWeek": 18800,
+    "priceDeltaPct": 18.0,
+    "customerAcceptanceScore": 0.72,
+    "labellingChangeRequired": false,
+    "allergenImpact": "recipe-label-change",
+    "leadTimeDays": 5,
+    "constraints": [
+      "quality-approval",
+      "customer-signage"
+    ],
+    "notes": "Substitution option for crisis response."
+  },
+  {
+    "id": "SUB-BAK-0104-A",
+    "partitionKey": "substitutes",
+    "productId": "SKU-BAK-0104",
+    "substituteProductId": "SKU-EGG-0009",
+    "substituteName": "Pasteurised Liquid Whole Egg 5kg",
+    "substitutionType": "liquid-egg",
+    "conversionRatio": 1,
+    "availabilityCasesPerWeek": 18800,
+    "priceDeltaPct": 18.0,
+    "customerAcceptanceScore": 0.72,
+    "labellingChangeRequired": false,
+    "allergenImpact": "recipe-label-change",
+    "leadTimeDays": 5,
+    "constraints": [
+      "quality-approval",
+      "customer-signage"
+    ],
+    "notes": "Substitution option for crisis response."
+  },
+  {
+    "id": "SUB-RDY-0201-A",
+    "partitionKey": "substitutes",
+    "productId": "SKU-RDY-0201",
+    "substituteProductId": "SKU-EGG-0009",
+    "substituteName": "Pasteurised Liquid Whole Egg 5kg",
+    "substitutionType": "recipe-reformulation",
+    "conversionRatio": 1,
+    "availabilityCasesPerWeek": 18800,
+    "priceDeltaPct": 18.0,
+    "customerAcceptanceScore": 0.72,
+    "labellingChangeRequired": true,
+    "allergenImpact": "recipe-label-change",
+    "leadTimeDays": 5,
+    "constraints": [
+      "quality-approval",
+      "customer-signage"
+    ],
+    "notes": "Substitution option for crisis response."
+  },
+  {
+    "id": "SUB-RDY-0203-A",
+    "partitionKey": "substitutes",
+    "productId": "SKU-RDY-0203",
+    "substituteProductId": "SKU-ALT-0001",
+    "substituteName": "Plant-Based Egg Replacer 1kg",
+    "substitutionType": "plant-based",
+    "conversionRatio": 1,
+    "availabilityCasesPerWeek": 18800,
+    "priceDeltaPct": 18.0,
+    "customerAcceptanceScore": 0.72,
+    "labellingChangeRequired": true,
+    "allergenImpact": "recipe-label-change",
+    "leadTimeDays": 5,
+    "constraints": [
+      "quality-approval",
+      "customer-signage"
+    ],
+    "notes": "Substitution option for crisis response."
+  }
+]

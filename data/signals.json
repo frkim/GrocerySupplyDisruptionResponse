@@ -1,0 +1,108 @@
+[
+  {
+    "id": "INC-2026-0042",
+    "partitionKey": "signals",
+    "productId": "SKU-EGG-0001",
+    "productName": "Free-Range Eggs Medium x6",
+    "category": "eggs",
+    "supplierId": "SUP-EGG-001",
+    "confidence": 0.91,
+    "depletionDaysMin": 4,
+    "depletionDaysMax": 9,
+    "supplyShortfallPct": 38.0,
+    "demandSurgePct": 44.0,
+    "impactedSkus": [
+      "SKU-EGG-0001",
+      "SKU-EGG-0002",
+      "SKU-EGG-0003",
+      "SKU-EGG-0005",
+      "SKU-EGG-0008",
+      "SKU-EGG-0009",
+      "SKU-BAK-0101",
+      "SKU-BAK-0102",
+      "SKU-RDY-0201"
+    ],
+    "affectedRegions": [
+      "NORTH",
+      "SOUTH",
+      "EAST",
+      "WEST",
+      "CENTRE"
+    ],
+    "affectedWarehouses": [
+      "DC-NORTH-01",
+      "DC-NORTH-02",
+      "DC-SOUTH-01",
+      "DC-SOUTH-02",
+      "DC-EAST-01",
+      "DC-EAST-02",
+      "DC-WEST-01",
+      "DC-CENTRE-01"
+    ],
+    "rootCause": "Nationwide highly pathogenic avian influenza outbreak has reduced laying-hen capacity and triggered consumer stockpiling.",
+    "source": "databricks-stub",
+    "detectedAt": "2026-02-10T05:30:00Z"
+  },
+  {
+    "id": "INC-2026-0043",
+    "partitionKey": "signals",
+    "productId": "SKU-EGG-0003",
+    "productName": "Organic Eggs Large x6",
+    "category": "eggs",
+    "supplierId": "SUP-EGG-003",
+    "confidence": 0.84,
+    "depletionDaysMin": 3,
+    "depletionDaysMax": 6,
+    "supplyShortfallPct": 52,
+    "demandSurgePct": 18,
+    "impactedSkus": [
+      "SKU-EGG-0003",
+      "SKU-EGG-0006",
+      "SKU-BAK-0103"
+    ],
+    "affectedRegions": [
+      "WEST",
+      "CENTRE"
+    ],
+    "affectedWarehouses": [
+      "DC-WEST-01",
+      "DC-CENTRE-01"
+    ],
+    "rootCause": "Regional organic flock cull removed certified supply.",
+    "source": "supplier-portal-stub",
+    "detectedAt": "2026-02-10T06:05:00Z"
+  },
+  {
+    "id": "INC-2026-0044",
+    "partitionKey": "signals",
+    "productId": "SKU-EGG-0009",
+    "productName": "Pasteurised Liquid Whole Egg 5kg",
+    "category": "eggs",
+    "supplierId": "SUP-EGG-013",
+    "confidence": 0.79,
+    "depletionDaysMin": 5,
+    "depletionDaysMax": 8,
+    "supplyShortfallPct": 31,
+    "demandSurgePct": 12,
+    "impactedSkus": [
+      "SKU-EGG-0009",
+      "SKU-BAK-0101",
+      "SKU-BAK-0104",
+      "SKU-RDY-0201",
+      "SKU-RDY-0204"
+    ],
+    "affectedRegions": [
+      "NORTH",
+      "SOUTH",
+      "CENTRE"
+    ],
+    "affectedWarehouses": [
+      "DC-NORTH-01",
+      "DC-SOUTH-01",
+      "DC-CENTRE-01"
+    ],
+    "rootCause": "Liquid egg processors are rationing breaking eggs as shell supply tightens.",
+    "source": "processor-edi-stub",
+    "detectedAt": "2026-02-10T07:20:00Z"
+  }
+]

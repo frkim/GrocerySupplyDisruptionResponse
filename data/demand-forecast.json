@@ -1,0 +1,402 @@
+[
+  {
+    "id": "FC-SKU-EGG-0001-NORTH",
+    "partitionKey": "demandForecast",
+    "productId": "SKU-EGG-0001",
+    "region": "NORTH",
+    "baselineWeeklyCases": 9800,
+    "currentWeeklyCases": 14200,
+    "surgePct": 44.9,
+    "forecastWeek1Cases": 14910,
+    "forecastWeek2Cases": 13774,
+    "forecastWeek3Cases": 12212,
+    "forecastWeek4Cases": 10934,
+    "confidence": 0.81,
+    "drivers": [
+      "panic-buying",
+      "media-coverage",
+      "promotion-live"
+    ],
+    "priceElasticity": -1.4
+  },
+  {
+    "id": "FC-SKU-EGG-0001-SOUTH",
+    "partitionKey": "demandForecast",
+    "productId": "SKU-EGG-0001",
+    "region": "SOUTH",
+    "baselineWeeklyCases": 11200,
+    "currentWeeklyCases": 16710,
+    "surgePct": 49.2,
+    "forecastWeek1Cases": 17545,
+    "forecastWeek2Cases": 16208,
+    "forecastWeek3Cases": 14370,
+    "forecastWeek4Cases": 12866,
+    "confidence": 0.81,
+    "drivers": [
+      "panic-buying",
+      "media-coverage",
+      "promotion-live"
+    ],
+    "priceElasticity": -1.4
+  },
+  {
+    "id": "FC-SKU-EGG-0001-EAST",
+    "partitionKey": "demandForecast",
+    "productId": "SKU-EGG-0001",
+    "region": "EAST",
+    "baselineWeeklyCases": 8900,
+    "currentWeeklyCases": 12602,
+    "surgePct": 41.6,
+    "forecastWeek1Cases": 13232,
+    "forecastWeek2Cases": 12223,
+    "forecastWeek3Cases": 10837,
+    "forecastWeek4Cases": 9703,
+    "confidence": 0.81,
+    "drivers": [
+      "panic-buying",
+      "media-coverage",
+      "promotion-live"
+    ],
+    "priceElasticity": -1.4
+  },
+  {
+    "id": "FC-SKU-EGG-0001-WEST",
+    "partitionKey": "demandForecast",
+    "productId": "SKU-EGG-0001",
+    "region": "WEST",
+    "baselineWeeklyCases": 9600,
+    "currentWeeklyCases": 13737,
+    "surgePct": 43.1,
+    "forecastWeek1Cases": 14423,
+    "forecastWeek2Cases": 13324,
+    "forecastWeek3Cases": 11813,
+    "forecastWeek4Cases": 10577,
+    "confidence": 0.81,
+    "drivers": [
+      "panic-buying",
+      "media-coverage",
+      "promotion-live"
+    ],
+    "priceElasticity": -1.4
+  },
+  {
+    "id": "FC-SKU-EGG-0001-CENTRE",
+    "partitionKey": "demandForecast",
+    "productId": "SKU-EGG-0001",
+    "region": "CENTRE",
+    "baselineWeeklyCases": 13200,
+    "currentWeeklyCases": 18453,
+    "surgePct": 39.8,
+    "forecastWeek1Cases": 19375,
+    "forecastWeek2Cases": 17899,
+    "forecastWeek3Cases": 15869,
+    "forecastWeek4Cases": 14208,
+    "confidence": 0.81,
+    "drivers": [
+      "panic-buying",
+      "media-coverage",
+      "promotion-live"
+    ],
+    "priceElasticity": -1.4
+  },
+  {
+    "id": "FC-SKU-EGG-0002-NORTH",
+    "partitionKey": "demandForecast",
+    "productId": "SKU-EGG-0002",
+    "region": "NORTH",
+    "baselineWeeklyCases": 8035,
+    "currentWeeklyCases": 11642,
+    "surgePct": 44.9,
+    "forecastWeek1Cases": 12224,
+    "forecastWeek2Cases": 11292,
+    "forecastWeek3Cases": 10012,
+    "forecastWeek4Cases": 8964,
+    "confidence": 0.81,
+    "drivers": [
+      "panic-buying",
+      "media-coverage",
+      "promotion-live"
+    ],
+    "priceElasticity": -1.4
+  },
+  {
+    "id": "FC-SKU-EGG-0002-SOUTH",
+    "partitionKey": "demandForecast",
+    "productId": "SKU-EGG-0002",
+    "region": "SOUTH",
+    "baselineWeeklyCases": 9184,
+    "currentWeeklyCases": 13702,
+    "surgePct": 49.2,
+    "forecastWeek1Cases": 14387,
+    "forecastWeek2Cases": 13290,
+    "forecastWeek3Cases": 11783,
+    "forecastWeek4Cases": 10550,
+    "confidence": 0.81,
+    "drivers": [
+      "panic-buying",
+      "media-coverage",
+      "promotion-live"
+    ],
+    "priceElasticity": -1.4
+  },
+  {
+    "id": "FC-SKU-EGG-0002-EAST",
+    "partitionKey": "demandForecast",
+    "productId": "SKU-EGG-0002",
+    "region": "EAST",
+    "baselineWeeklyCases": 7298,
+    "currentWeeklyCases": 10333,
+    "surgePct": 41.6,
+    "forecastWeek1Cases": 10849,
+    "forecastWeek2Cases": 10023,
+    "forecastWeek3Cases": 8886,
+    "forecastWeek4Cases": 7956,
+    "confidence": 0.81,
+    "drivers": [
+      "panic-buying",
+      "media-coverage",
+      "promotion-live"
+    ],
+    "priceElasticity": -1.4
+  },
+  {
+    "id": "FC-SKU-EGG-0002-WEST",
+    "partitionKey": "demandForecast",
+    "productId": "SKU-EGG-0002",
+    "region": "WEST",
+    "baselineWeeklyCases": 7871,
+    "currentWeeklyCases": 11263,
+    "surgePct": 43.1,
+    "forecastWeek1Cases": 11826,
+    "forecastWeek2Cases": 10925,
+    "forecastWeek3Cases": 9686,
+    "forecastWeek4Cases": 8672,
+    "confidence": 0.81,
+    "drivers": [
+      "panic-buying",
+      "media-coverage",
+      "promotion-live"
+    ],
+    "priceElasticity": -1.4
+  },
+  {
+    "id": "FC-SKU-EGG-0002-CENTRE",
+    "partitionKey": "demandForecast",
+    "productId": "SKU-EGG-0002",
+    "region": "CENTRE",
+    "baselineWeeklyCases": 10824,
+    "currentWeeklyCases": 15131,
+    "surgePct": 39.8,
+    "forecastWeek1Cases": 15887,
+    "forecastWeek2Cases": 14677,
+    "forecastWeek3Cases": 13012,
+    "forecastWeek4Cases": 11650,
+    "confidence": 0.81,
+    "drivers": [
+      "panic-buying",
+      "media-coverage",
+      "promotion-live"
+    ],
+    "priceElasticity": -1.4
+  },
+  {
+    "id": "FC-SKU-EGG-0003-NORTH",
+    "partitionKey": "demandForecast",
+    "productId": "SKU-EGG-0003",
+    "region": "NORTH",
+    "baselineWeeklyCases": 2744,
+    "currentWeeklyCases": 3976,
+    "surgePct": 44.9,
+    "forecastWeek1Cases": 4174,
+    "forecastWeek2Cases": 3856,
+    "forecastWeek3Cases": 3419,
+    "forecastWeek4Cases": 3061,
+    "confidence": 0.81,
+    "drivers": [
+      "panic-buying",
+      "media-coverage",
+      "promotion-live"
+    ],
+    "priceElasticity": -1.4
+  },
+  {
+    "id": "FC-SKU-EGG-0003-SOUTH",
+    "partitionKey": "demandForecast",
+    "productId": "SKU-EGG-0003",
+    "region": "SOUTH",
+    "baselineWeeklyCases": 3136,
+    "currentWeeklyCases": 4678,
+    "surgePct": 49.2,
+    "forecastWeek1Cases": 4911,
+    "forecastWeek2Cases": 4537,
+    "forecastWeek3Cases": 4023,
+    "forecastWeek4Cases": 3602,
+    "confidence": 0.81,
+    "drivers": [
+      "panic-buying",
+      "media-coverage",
+      "promotion-live"
+    ],
+    "priceElasticity": -1.4
+  },
+  {
+    "id": "FC-SKU-EGG-0003-EAST",
+    "partitionKey": "demandForecast",
+    "productId": "SKU-EGG-0003",
+    "region": "EAST",
+    "baselineWeeklyCases": 2492,
+    "currentWeeklyCases": 3528,
+    "surgePct": 41.6,
+    "forecastWeek1Cases": 3704,
+    "forecastWeek2Cases": 3422,
+    "forecastWeek3Cases": 3034,
+    "forecastWeek4Cases": 2716,
+    "confidence": 0.81,
+    "drivers": [
+      "panic-buying",
+      "media-coverage",
+      "promotion-live"
+    ],
+    "priceElasticity": -1.4
+  },
+  {
+    "id": "FC-SKU-EGG-0003-WEST",
+    "partitionKey": "demandForecast",
+    "productId": "SKU-EGG-0003",
+    "region": "WEST",
+    "baselineWeeklyCases": 2688,
+    "currentWeeklyCases": 3846,
+    "surgePct": 43.1,
+    "forecastWeek1Cases": 4038,
+    "forecastWeek2Cases": 3730,
+    "forecastWeek3Cases": 3307,
+    "forecastWeek4Cases": 2961,
+    "confidence": 0.81,
+    "drivers": [
+      "panic-buying",
+      "media-coverage",
+      "promotion-live"
+    ],
+    "priceElasticity": -1.4
+  },
+  {
+    "id": "FC-SKU-EGG-0003-CENTRE",
+    "partitionKey": "demandForecast",
+    "productId": "SKU-EGG-0003",
+    "region": "CENTRE",
+    "baselineWeeklyCases": 3696,
+    "currentWeeklyCases": 5167,
+    "surgePct": 39.8,
+    "forecastWeek1Cases": 5425,
+    "forecastWeek2Cases": 5011,
+    "forecastWeek3Cases": 4443,
+    "forecastWeek4Cases": 3978,
+    "confidence": 0.81,
+    "drivers": [
+      "panic-buying",
+      "media-coverage",
+      "promotion-live"
+    ],
+    "priceElasticity": -1.4
+  },
+  {
+    "id": "FC-SKU-EGG-0005-NORTH",
+    "partitionKey": "demandForecast",
+    "productId": "SKU-EGG-0005",
+    "region": "NORTH",
+    "baselineWeeklyCases": 6664,
+    "currentWeeklyCases": 9656,
+    "surgePct": 44.9,
+    "forecastWeek1Cases": 10138,
+    "forecastWeek2Cases": 9366,
+    "forecastWeek3Cases": 8304,
+    "forecastWeek4Cases": 7435,
+    "confidence": 0.81,
+    "drivers": [
+      "panic-buying",
+      "media-coverage",
+      "promotion-live"
+    ],
+    "priceElasticity": -1.4
+  },
+  {
+    "id": "FC-SKU-EGG-0005-SOUTH",
+    "partitionKey": "demandForecast",
+    "productId": "SKU-EGG-0005",
+    "region": "SOUTH",
+    "baselineWeeklyCases": 7616,
+    "currentWeeklyCases": 11363,
+    "surgePct": 49.2,
+    "forecastWeek1Cases": 11931,
+    "forecastWeek2Cases": 11022,
+    "forecastWeek3Cases": 9772,
+    "forecastWeek4Cases": 8749,
+    "confidence": 0.81,
+    "drivers": [
+      "panic-buying",
+      "media-coverage",
+      "promotion-live"
+    ],
+    "priceElasticity": -1.4
+  },
+  {
+    "id": "FC-SKU-EGG-0005-EAST",
+    "partitionKey": "demandForecast",
+    "productId": "SKU-EGG-0005",
+    "region": "EAST",
+    "baselineWeeklyCases": 6052,
+    "currentWeeklyCases": 8569,
+    "surgePct": 41.6,
+    "forecastWeek1Cases": 8997,
+    "forecastWeek2Cases": 8311,
+    "forecastWeek3Cases": 7369,
+    "forecastWeek4Cases": 6598,
+    "confidence": 0.81,
+    "drivers": [
+      "panic-buying",
+      "media-coverage",
+      "promotion-live"
+    ],
+    "priceElasticity": -1.4
+  },
+  {
+    "id": "FC-SKU-EGG-0005-WEST",
+    "partitionKey": "demandForecast",
+    "productId": "SKU-EGG-0005",
+    "region": "WEST",
+    "baselineWeeklyCases": 6528,
+    "currentWeeklyCases": 9341,
+    "surgePct": 43.1,
+    "forecastWeek1Cases": 9808,
+    "forecastWeek2Cases": 9060,
+    "forecastWeek3Cases": 8033,
+    "forecastWeek4Cases": 7192,
+    "confidence": 0.81,
+    "drivers": [
+      "panic-buying",
+      "media-coverage",
+      "promotion-live"
+    ],
+    "priceElasticity": -1.4
+  },
+  {
+    "id": "FC-SKU-EGG-0005-CENTRE",
+    "partitionKey": "demandForecast",
+    "productId": "SKU-EGG-0005",
+    "region": "CENTRE",
+    "baselineWeeklyCases": 8976,
+    "currentWeeklyCases": 12548,
+    "surgePct": 39.8,
+    "forecastWeek1Cases": 13175,
+    "forecastWeek2Cases": 12171,
+    "forecastWeek3Cases": 10791,
+    "forecastWeek4Cases": 9661,
+    "confidence": 0.81,
+    "drivers": [
+      "panic-buying",
+      "media-coverage",
+      "promotion-live"
+    ],
+    "priceElasticity": -1.4
+  }
+]

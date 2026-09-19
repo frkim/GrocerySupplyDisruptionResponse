@@ -1,0 +1,739 @@
+[
+  {
+    "id": "SKU-EGG-0001",
+    "partitionKey": "eggs",
+    "name": "Free-Range Eggs Medium x6",
+    "category": "eggs",
+    "subCategory": "shell-eggs",
+    "brandType": "private-label",
+    "eanCode": "34500000000001",
+    "unitOfMeasure": "pack",
+    "unitsPerCase": 12,
+    "shelfLifeDays": 28,
+    "retailPriceEur": 2.35,
+    "unitCostEur": 1.62,
+    "marginPct": 31.1,
+    "weeklyUnitsSold": 412000,
+    "strategicTier": "traffic-driver",
+    "primarySupplierId": "SUP-EGG-001",
+    "alternateSupplierIds": [
+      "SUP-EGG-006",
+      "SUP-EGG-009"
+    ],
+    "inputProductIds": [],
+    "eggContentUnitsPerCase": 0,
+    "substituteProductIds": [
+      "SKU-EGG-0001",
+      "SKU-EGG-0002"
+    ],
+    "regionsSold": [
+      "NORTH",
+      "SOUTH",
+      "EAST",
+      "WEST",
+      "CENTRE"
+    ],
+    "notes": "Vivalis Retail Group egg SKU exposed to HPAI restrictions, 35-40% national shortfall and 40-50% demand surge."
+  },
+  {
+    "id": "SKU-EGG-0002",
+    "partitionKey": "eggs",
+    "name": "Barn Eggs Medium x10",
+    "category": "eggs",
+    "subCategory": "shell-eggs",
+    "brandType": "private-label",
+    "eanCode": "34500000000002",
+    "unitOfMeasure": "pack",
+    "unitsPerCase": 12,
+    "shelfLifeDays": 28,
+    "retailPriceEur": 2.89,
+    "unitCostEur": 1.94,
+    "marginPct": 32.9,
+    "weeklyUnitsSold": 366000,
+    "strategicTier": "traffic-driver",
+    "primarySupplierId": "SUP-EGG-002",
+    "alternateSupplierIds": [
+      "SUP-EGG-006",
+      "SUP-EGG-009"
+    ],
+    "inputProductIds": [],
+    "eggContentUnitsPerCase": 0,
+    "substituteProductIds": [
+      "SKU-EGG-0001",
+      "SKU-EGG-0002"
+    ],
+    "regionsSold": [
+      "NORTH",
+      "SOUTH",
+      "EAST",
+      "WEST",
+      "CENTRE"
+    ],
+    "notes": "Vivalis Retail Group egg SKU exposed to HPAI restrictions, 35-40% national shortfall and 40-50% demand surge."
+  },
+  {
+    "id": "SKU-EGG-0003",
+    "partitionKey": "eggs",
+    "name": "Organic Eggs Large x6",
+    "category": "eggs",
+    "subCategory": "shell-eggs",
+    "brandType": "private-label",
+    "eanCode": "34500000000003",
+    "unitOfMeasure": "pack",
+    "unitsPerCase": 12,
+    "shelfLifeDays": 28,
+    "retailPriceEur": 3.69,
+    "unitCostEur": 2.71,
+    "marginPct": 26.6,
+    "weeklyUnitsSold": 121000,
+    "strategicTier": "core",
+    "primarySupplierId": "SUP-EGG-003",
+    "alternateSupplierIds": [
+      "SUP-EGG-010",
+      "SUP-EGG-011"
+    ],
+    "inputProductIds": [],
+    "eggContentUnitsPerCase": 0,
+    "substituteProductIds": [
+      "SKU-EGG-0001",
+      "SKU-EGG-0002"
+    ],
+    "regionsSold": [
+      "NORTH",
+      "SOUTH",
+      "EAST",
+      "WEST",
+      "CENTRE"
+    ],
+    "notes": "Vivalis Retail Group egg SKU exposed to HPAI restrictions, 35-40% national shortfall and 40-50% demand surge."
+  },
+  {
+    "id": "SKU-EGG-0004",
+    "partitionKey": "eggs",
+    "name": "Cage-Free Eggs Large x12",
+    "category": "eggs",
+    "subCategory": "shell-eggs",
+    "brandType": "national-brand",
+    "eanCode": "34500000000004",
+    "unitOfMeasure": "pack",
+    "unitsPerCase": 12,
+    "shelfLifeDays": 28,
+    "retailPriceEur": 4.95,
+    "unitCostEur": 3.62,
+    "marginPct": 26.9,
+    "weeklyUnitsSold": 158000,
+    "strategicTier": "core",
+    "primarySupplierId": "SUP-EGG-004",
+    "alternateSupplierIds": [
+      "SUP-EGG-010",
+      "SUP-EGG-011"
+    ],
+    "inputProductIds": [],
+    "eggContentUnitsPerCase": 0,
+    "substituteProductIds": [
+      "SKU-EGG-0001",
+      "SKU-EGG-0002"
+    ],
+    "regionsSold": [
+      "NORTH",
+      "SOUTH",
+      "EAST",
+      "WEST",
+      "CENTRE"
+    ],
+    "notes": "Vivalis Retail Group egg SKU exposed to HPAI restrictions, 35-40% national shortfall and 40-50% demand surge."
+  },
+  {
+    "id": "SKU-EGG-0005",
+    "partitionKey": "eggs",
+    "name": "Barn Eggs Medium x6 Value",
+    "category": "eggs",
+    "subCategory": "shell-eggs",
+    "brandType": "private-label",
+    "eanCode": "34500000000005",
+    "unitOfMeasure": "pack",
+    "unitsPerCase": 12,
+    "shelfLifeDays": 28,
+    "retailPriceEur": 1.95,
+    "unitCostEur": 1.38,
+    "marginPct": 29.2,
+    "weeklyUnitsSold": 287000,
+    "strategicTier": "traffic-driver",
+    "primarySupplierId": "SUP-EGG-005",
+    "alternateSupplierIds": [
+      "SUP-EGG-006",
+      "SUP-EGG-009"
+    ],
+    "inputProductIds": [],
+    "eggContentUnitsPerCase": 0,
+    "substituteProductIds": [
+      "SKU-EGG-0001",
+      "SKU-EGG-0002"
+    ],
+    "regionsSold": [
+      "NORTH",
+      "SOUTH",
+      "EAST",
+      "WEST",
+      "CENTRE"
+    ],
+    "notes": "Vivalis Retail Group egg SKU exposed to HPAI restrictions, 35-40% national shortfall and 40-50% demand surge."
+  },
+  {
+    "id": "SKU-EGG-0006",
+    "partitionKey": "eggs",
+    "name": "Organic Eggs Mixed Size x10",
+    "category": "eggs",
+    "subCategory": "shell-eggs",
+    "brandType": "national-brand",
+    "eanCode": "34500000000006",
+    "unitOfMeasure": "pack",
+    "unitsPerCase": 12,
+    "shelfLifeDays": 28,
+    "retailPriceEur": 5.15,
+    "unitCostEur": 3.84,
+    "marginPct": 25.4,
+    "weeklyUnitsSold": 72000,
+    "strategicTier": "long-tail",
+    "primarySupplierId": "SUP-EGG-003",
+    "alternateSupplierIds": [
+      "SUP-EGG-010",
+      "SUP-EGG-011"
+    ],
+    "inputProductIds": [],
+    "eggContentUnitsPerCase": 0,
+    "substituteProductIds": [
+      "SKU-EGG-0001",
+      "SKU-EGG-0002"
+    ],
+    "regionsSold": [
+      "NORTH",
+      "SOUTH",
+      "EAST",
+      "WEST",
+      "CENTRE"
+    ],
+    "notes": "Vivalis Retail Group egg SKU exposed to HPAI restrictions, 35-40% national shortfall and 40-50% demand surge."
+  },
+  {
+    "id": "SKU-EGG-0007",
+    "partitionKey": "eggs",
+    "name": "Omega-3 Eggs Large x6",
+    "category": "eggs",
+    "subCategory": "shell-eggs",
+    "brandType": "national-brand",
+    "eanCode": "34500000000007",
+    "unitOfMeasure": "pack",
+    "unitsPerCase": 12,
+    "shelfLifeDays": 28,
+    "retailPriceEur": 3.49,
+    "unitCostEur": 2.54,
+    "marginPct": 27.2,
+    "weeklyUnitsSold": 94000,
+    "strategicTier": "long-tail",
+    "primarySupplierId": "SUP-EGG-004",
+    "alternateSupplierIds": [
+      "SUP-EGG-010",
+      "SUP-EGG-011"
+    ],
+    "inputProductIds": [],
+    "eggContentUnitsPerCase": 0,
+    "substituteProductIds": [
+      "SKU-EGG-0001",
+      "SKU-EGG-0002"
+    ],
+    "regionsSold": [
+      "NORTH",
+      "SOUTH",
+      "EAST",
+      "WEST",
+      "CENTRE"
+    ],
+    "notes": "Vivalis Retail Group egg SKU exposed to HPAI restrictions, 35-40% national shortfall and 40-50% demand surge."
+  },
+  {
+    "id": "SKU-EGG-0008",
+    "partitionKey": "eggs",
+    "name": "Chef Pack Eggs Medium x30",
+    "category": "eggs",
+    "subCategory": "shell-eggs",
+    "brandType": "private-label",
+    "eanCode": "34500000000008",
+    "unitOfMeasure": "tray",
+    "unitsPerCase": 6,
+    "shelfLifeDays": 28,
+    "retailPriceEur": 8.9,
+    "unitCostEur": 6.48,
+    "marginPct": 27.2,
+    "weeklyUnitsSold": 83000,
+    "strategicTier": "core",
+    "primarySupplierId": "SUP-EGG-001",
+    "alternateSupplierIds": [
+      "SUP-EGG-010",
+      "SUP-EGG-011"
+    ],
+    "inputProductIds": [],
+    "eggContentUnitsPerCase": 0,
+    "substituteProductIds": [
+      "SKU-EGG-0001",
+      "SKU-EGG-0002"
+    ],
+    "regionsSold": [
+      "NORTH",
+      "SOUTH",
+      "EAST",
+      "WEST",
+      "CENTRE"
+    ],
+    "notes": "Vivalis Retail Group egg SKU exposed to HPAI restrictions, 35-40% national shortfall and 40-50% demand surge."
+  },
+  {
+    "id": "SKU-EGG-0009",
+    "partitionKey": "eggs",
+    "name": "Pasteurised Liquid Whole Egg 5kg",
+    "category": "eggs",
+    "subCategory": "liquid-egg",
+    "brandType": "private-label",
+    "eanCode": "34500000000009",
+    "unitOfMeasure": "kg",
+    "unitsPerCase": 2,
+    "shelfLifeDays": 18,
+    "retailPriceEur": 24.5,
+    "unitCostEur": 18.2,
+    "marginPct": 25.7,
+    "weeklyUnitsSold": 31000,
+    "strategicTier": "core",
+    "primarySupplierId": "SUP-EGG-013",
+    "alternateSupplierIds": [
+      "SUP-EGG-010",
+      "SUP-EGG-011"
+    ],
+    "inputProductIds": [],
+    "eggContentUnitsPerCase": 0,
+    "substituteProductIds": [
+      "SKU-EGG-0001",
+      "SKU-EGG-0002"
+    ],
+    "regionsSold": [
+      "NORTH",
+      "SOUTH",
+      "EAST",
+      "WEST",
+      "CENTRE"
+    ],
+    "notes": "Vivalis Retail Group egg SKU exposed to HPAI restrictions, 35-40% national shortfall and 40-50% demand surge."
+  },
+  {
+    "id": "SKU-ALT-0001",
+    "partitionKey": "ambient",
+    "name": "Plant-Based Egg Replacer 1kg",
+    "category": "ambient",
+    "subCategory": "dessert",
+    "brandType": "national-brand",
+    "eanCode": "3450000000999",
+    "unitOfMeasure": "kg",
+    "unitsPerCase": 6,
+    "shelfLifeDays": 365,
+    "retailPriceEur": 7.95,
+    "unitCostEur": 5.2,
+    "marginPct": 34.6,
+    "weeklyUnitsSold": 9500,
+    "strategicTier": "long-tail",
+    "primarySupplierId": "SUP-EGG-015",
+    "alternateSupplierIds": [],
+    "inputProductIds": [],
+    "eggContentUnitsPerCase": 0,
+    "substituteProductIds": [
+      "SKU-EGG-0009"
+    ],
+    "regionsSold": [
+      "NORTH",
+      "SOUTH",
+      "EAST",
+      "WEST",
+      "CENTRE"
+    ],
+    "notes": "Ambient substitute for selected bakery recipes after label approval."
+  },
+  {
+    "id": "SKU-BAK-0101",
+    "partitionKey": "bakery",
+    "name": "Morning Brioche Rolls x6",
+    "category": "bakery",
+    "subCategory": "bakery",
+    "brandType": "private-label",
+    "eanCode": "34500000101",
+    "unitOfMeasure": "case",
+    "unitsPerCase": 6,
+    "shelfLifeDays": 7,
+    "retailPriceEur": 2.72,
+    "unitCostEur": 1.74,
+    "marginPct": 36.0,
+    "weeklyUnitsSold": 59000,
+    "strategicTier": "core",
+    "primarySupplierId": "SUP-EGG-013",
+    "alternateSupplierIds": [
+      "SUP-EGG-014",
+      "SUP-EGG-015"
+    ],
+    "inputProductIds": [
+      "SKU-EGG-0001"
+    ],
+    "eggContentUnitsPerCase": 144,
+    "substituteProductIds": [
+      "SKU-ALT-0001",
+      "SKU-EGG-0009"
+    ],
+    "regionsSold": [
+      "NORTH",
+      "SOUTH",
+      "EAST",
+      "WEST",
+      "CENTRE"
+    ],
+    "notes": "Derived private-label SKU with real egg inputs so dependent-products tools return actionable rows."
+  },
+  {
+    "id": "SKU-BAK-0102",
+    "partitionKey": "bakery",
+    "name": "Private-Label Egg Waffles x8",
+    "category": "bakery",
+    "subCategory": "bakery",
+    "brandType": "private-label",
+    "eanCode": "34500000102",
+    "unitOfMeasure": "case",
+    "unitsPerCase": 6,
+    "shelfLifeDays": 7,
+    "retailPriceEur": 3.04,
+    "unitCostEur": 1.95,
+    "marginPct": 35.9,
+    "weeklyUnitsSold": 73000,
+    "strategicTier": "core",
+    "primarySupplierId": "SUP-EGG-013",
+    "alternateSupplierIds": [
+      "SUP-EGG-014",
+      "SUP-EGG-015"
+    ],
+    "inputProductIds": [
+      "SKU-EGG-0002"
+    ],
+    "eggContentUnitsPerCase": 96,
+    "substituteProductIds": [
+      "SKU-ALT-0001",
+      "SKU-EGG-0009"
+    ],
+    "regionsSold": [
+      "NORTH",
+      "SOUTH",
+      "EAST",
+      "WEST",
+      "CENTRE"
+    ],
+    "notes": "Derived private-label SKU with real egg inputs so dependent-products tools return actionable rows."
+  },
+  {
+    "id": "SKU-BAK-0103",
+    "partitionKey": "bakery",
+    "name": "Chilled Custard Tart 600g",
+    "category": "bakery",
+    "subCategory": "dessert",
+    "brandType": "private-label",
+    "eanCode": "34500000103",
+    "unitOfMeasure": "case",
+    "unitsPerCase": 6,
+    "shelfLifeDays": 7,
+    "retailPriceEur": 3.36,
+    "unitCostEur": 2.15,
+    "marginPct": 36.0,
+    "weeklyUnitsSold": 87000,
+    "strategicTier": "core",
+    "primarySupplierId": "SUP-EGG-013",
+    "alternateSupplierIds": [
+      "SUP-EGG-014",
+      "SUP-EGG-015"
+    ],
+    "inputProductIds": [
+      "SKU-EGG-0003"
+    ],
+    "eggContentUnitsPerCase": 180,
+    "substituteProductIds": [
+      "SKU-ALT-0001",
+      "SKU-EGG-0009"
+    ],
+    "regionsSold": [
+      "NORTH",
+      "SOUTH",
+      "EAST",
+      "WEST",
+      "CENTRE"
+    ],
+    "notes": "Derived private-label SKU with real egg inputs so dependent-products tools return actionable rows."
+  },
+  {
+    "id": "SKU-BAK-0104",
+    "partitionKey": "bakery",
+    "name": "In-Store Bakery Madeleines x12",
+    "category": "bakery",
+    "subCategory": "bakery",
+    "brandType": "private-label",
+    "eanCode": "34500000104",
+    "unitOfMeasure": "case",
+    "unitsPerCase": 6,
+    "shelfLifeDays": 7,
+    "retailPriceEur": 3.68,
+    "unitCostEur": 2.36,
+    "marginPct": 35.9,
+    "weeklyUnitsSold": 101000,
+    "strategicTier": "core",
+    "primarySupplierId": "SUP-EGG-013",
+    "alternateSupplierIds": [
+      "SUP-EGG-014",
+      "SUP-EGG-015"
+    ],
+    "inputProductIds": [
+      "SKU-EGG-0005"
+    ],
+    "eggContentUnitsPerCase": 120,
+    "substituteProductIds": [
+      "SKU-ALT-0001",
+      "SKU-EGG-0009"
+    ],
+    "regionsSold": [
+      "NORTH",
+      "SOUTH",
+      "EAST",
+      "WEST",
+      "CENTRE"
+    ],
+    "notes": "Derived private-label SKU with real egg inputs so dependent-products tools return actionable rows."
+  },
+  {
+    "id": "SKU-BAK-0105",
+    "partitionKey": "bakery",
+    "name": "Family Sponge Cake Base 400g",
+    "category": "bakery",
+    "subCategory": "dessert",
+    "brandType": "private-label",
+    "eanCode": "34500000105",
+    "unitOfMeasure": "case",
+    "unitsPerCase": 6,
+    "shelfLifeDays": 7,
+    "retailPriceEur": 4.0,
+    "unitCostEur": 2.56,
+    "marginPct": 36.0,
+    "weeklyUnitsSold": 115000,
+    "strategicTier": "core",
+    "primarySupplierId": "SUP-EGG-013",
+    "alternateSupplierIds": [
+      "SUP-EGG-014",
+      "SUP-EGG-015"
+    ],
+    "inputProductIds": [
+      "SKU-EGG-0001",
+      "SKU-EGG-0005"
+    ],
+    "eggContentUnitsPerCase": 168,
+    "substituteProductIds": [
+      "SKU-ALT-0001",
+      "SKU-EGG-0009"
+    ],
+    "regionsSold": [
+      "NORTH",
+      "SOUTH",
+      "EAST",
+      "WEST",
+      "CENTRE"
+    ],
+    "notes": "Derived private-label SKU with real egg inputs so dependent-products tools return actionable rows."
+  },
+  {
+    "id": "SKU-BAK-0106",
+    "partitionKey": "bakery",
+    "name": "Chocolate Choux Dessert x4",
+    "category": "bakery",
+    "subCategory": "dessert",
+    "brandType": "private-label",
+    "eanCode": "34500000106",
+    "unitOfMeasure": "case",
+    "unitsPerCase": 6,
+    "shelfLifeDays": 7,
+    "retailPriceEur": 4.32,
+    "unitCostEur": 2.76,
+    "marginPct": 36.1,
+    "weeklyUnitsSold": 129000,
+    "strategicTier": "core",
+    "primarySupplierId": "SUP-EGG-013",
+    "alternateSupplierIds": [
+      "SUP-EGG-014",
+      "SUP-EGG-015"
+    ],
+    "inputProductIds": [
+      "SKU-EGG-0009"
+    ],
+    "eggContentUnitsPerCase": 210,
+    "substituteProductIds": [
+      "SKU-ALT-0001",
+      "SKU-EGG-0009"
+    ],
+    "regionsSold": [
+      "NORTH",
+      "SOUTH",
+      "EAST",
+      "WEST",
+      "CENTRE"
+    ],
+    "notes": "Derived private-label SKU with real egg inputs so dependent-products tools return actionable rows."
+  },
+  {
+    "id": "SKU-RDY-0201",
+    "partitionKey": "ready-meals",
+    "name": "Spinach and Egg Quiche 400g",
+    "category": "ready-meals",
+    "subCategory": "pasta",
+    "brandType": "private-label",
+    "eanCode": "34500000107",
+    "unitOfMeasure": "case",
+    "unitsPerCase": 8,
+    "shelfLifeDays": 10,
+    "retailPriceEur": 4.64,
+    "unitCostEur": 2.97,
+    "marginPct": 36.0,
+    "weeklyUnitsSold": 143000,
+    "strategicTier": "core",
+    "primarySupplierId": "SUP-EGG-014",
+    "alternateSupplierIds": [
+      "SUP-EGG-014",
+      "SUP-EGG-015"
+    ],
+    "inputProductIds": [
+      "SKU-EGG-0002"
+    ],
+    "eggContentUnitsPerCase": 84,
+    "substituteProductIds": [
+      "SKU-ALT-0001",
+      "SKU-EGG-0009"
+    ],
+    "regionsSold": [
+      "NORTH",
+      "SOUTH",
+      "EAST",
+      "WEST",
+      "CENTRE"
+    ],
+    "notes": "Derived private-label SKU with real egg inputs so dependent-products tools return actionable rows."
+  },
+  {
+    "id": "SKU-RDY-0202",
+    "partitionKey": "ready-meals",
+    "name": "Ham and Egg Pasta Salad 300g",
+    "category": "ready-meals",
+    "subCategory": "pasta",
+    "brandType": "private-label",
+    "eanCode": "34500000108",
+    "unitOfMeasure": "case",
+    "unitsPerCase": 8,
+    "shelfLifeDays": 10,
+    "retailPriceEur": 4.96,
+    "unitCostEur": 3.17,
+    "marginPct": 36.1,
+    "weeklyUnitsSold": 157000,
+    "strategicTier": "core",
+    "primarySupplierId": "SUP-EGG-014",
+    "alternateSupplierIds": [
+      "SUP-EGG-014",
+      "SUP-EGG-015"
+    ],
+    "inputProductIds": [
+      "SKU-EGG-0001"
+    ],
+    "eggContentUnitsPerCase": 48,
+    "substituteProductIds": [
+      "SKU-ALT-0001",
+      "SKU-EGG-0009"
+    ],
+    "regionsSold": [
+      "NORTH",
+      "SOUTH",
+      "EAST",
+      "WEST",
+      "CENTRE"
+    ],
+    "notes": "Derived private-label SKU with real egg inputs so dependent-products tools return actionable rows."
+  },
+  {
+    "id": "SKU-RDY-0203",
+    "partitionKey": "ready-meals",
+    "name": "Egg Fried Rice Ready Meal 450g",
+    "category": "ready-meals",
+    "subCategory": "pasta",
+    "brandType": "private-label",
+    "eanCode": "34500000109",
+    "unitOfMeasure": "case",
+    "unitsPerCase": 8,
+    "shelfLifeDays": 10,
+    "retailPriceEur": 5.28,
+    "unitCostEur": 3.38,
+    "marginPct": 36.0,
+    "weeklyUnitsSold": 171000,
+    "strategicTier": "core",
+    "primarySupplierId": "SUP-EGG-014",
+    "alternateSupplierIds": [
+      "SUP-EGG-014",
+      "SUP-EGG-015"
+    ],
+    "inputProductIds": [
+      "SKU-EGG-0005"
+    ],
+    "eggContentUnitsPerCase": 72,
+    "substituteProductIds": [
+      "SKU-ALT-0001",
+      "SKU-EGG-0009"
+    ],
+    "regionsSold": [
+      "NORTH",
+      "SOUTH",
+      "EAST",
+      "WEST",
+      "CENTRE"
+    ],
+    "notes": "Derived private-label SKU with real egg inputs so dependent-products tools return actionable rows."
+  },
+  {
+    "id": "SKU-RDY-0204",
+    "partitionKey": "ready-meals",
+    "name": "Vegetable Frittata Tray 500g",
+    "category": "ready-meals",
+    "subCategory": "dessert",
+    "brandType": "private-label",
+    "eanCode": "34500000110",
+    "unitOfMeasure": "case",
+    "unitsPerCase": 8,
+    "shelfLifeDays": 10,
+    "retailPriceEur": 5.6,
+    "unitCostEur": 3.58,
+    "marginPct": 36.1,
+    "weeklyUnitsSold": 185000,
+    "strategicTier": "core",
+    "primarySupplierId": "SUP-EGG-014",
+    "alternateSupplierIds": [
+      "SUP-EGG-014",
+      "SUP-EGG-015"
+    ],
+    "inputProductIds": [
+      "SKU-EGG-0004"
+    ],
+    "eggContentUnitsPerCase": 156,
+    "substituteProductIds": [
+      "SKU-ALT-0001",
+      "SKU-EGG-0009"
+    ],
+    "regionsSold": [
+      "NORTH",
+      "SOUTH",
+      "EAST",
+      "WEST",
+      "CENTRE"
+    ],
+    "notes": "Derived private-label SKU with real egg inputs so dependent-products tools return actionable rows."
+  }
+]

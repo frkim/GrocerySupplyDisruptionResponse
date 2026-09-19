@@ -1,0 +1,229 @@
+.hdr {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  padding: 12px 18px;
+  background: var(--hdr-bg);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line);
+}
+
+.hdr__brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.hdr__mark {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: linear-gradient(145deg, var(--accent), #6366f1);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.35), 0 6px 18px rgba(56, 189, 248, 0.18);
+}
+
+.hdr__mark span {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  background: var(--bg-deep);
+}
+
+.hdr__names {
+  min-width: 0;
+}
+
+.hdr__product {
+  font-size: 15.5px;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.hdr__sub {
+  margin: 2px 0 0;
+  font-size: 11.5px;
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.hdr__conn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+}
+
+.hdr__conn::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--idle);
+}
+
+.hdr__conn--ok::before {
+  background: var(--ok);
+  box-shadow: 0 0 6px var(--ok);
+}
+.hdr__conn--bad::before {
+  background: var(--bad);
+}
+.hdr__conn--unknown::before {
+  background: var(--warn);
+}
+
+.hdr__meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-left: auto;
+}
+
+.hdr__incident {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  border: 1px solid var(--accent-line);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--mono);
+}
+
+.hdr__incident-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.hdr__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.hdr__pill-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--idle);
+}
+
+.hdr__pill--running {
+  border-color: rgba(251, 191, 36, 0.45);
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+.hdr__pill--running .hdr__pill-dot {
+  background: var(--warn);
+  animation: hdr-pulse 1.3s ease-in-out infinite;
+}
+
+.hdr__pill--awaiting {
+  border-color: rgba(167, 139, 250, 0.5);
+  background: var(--gate-soft);
+  color: var(--gate);
+}
+.hdr__pill--awaiting .hdr__pill-dot {
+  background: var(--gate);
+  animation: hdr-pulse 1s ease-in-out infinite;
+}
+
+.hdr__pill--completed {
+  border-color: rgba(52, 211, 153, 0.45);
+  background: var(--ok-soft);
+  color: var(--ok);
+}
+.hdr__pill--completed .hdr__pill-dot {
+  background: var(--ok);
+}
+
+.hdr__pill--failed {
+  border-color: rgba(248, 113, 113, 0.45);
+  background: var(--bad-soft);
+  color: var(--bad);
+}
+.hdr__pill--failed .hdr__pill-dot {
+  background: var(--bad);
+}
+
+@keyframes hdr-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.35;
+    transform: scale(0.78);
+  }
+}
+
+.hdr__stat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  padding: 0 4px;
+  min-width: 62px;
+}
+
+.hdr__stat-label {
+  font-size: 9.5px;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.hdr__stat-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-hi);
+  font-variant-numeric: tabular-nums;
+}
+
+.hdr__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.hdr__runid {
+  color: var(--text-faint);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+}
+
+@media (max-width: 1240px) {
+  .hdr__meta {
+    order: 3;
+    margin-left: 0;
+    width: 100%;
+  }
+  .hdr__actions {
+    margin-left: auto;
+  }
+}

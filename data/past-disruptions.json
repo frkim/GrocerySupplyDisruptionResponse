@@ -1,0 +1,132 @@
+[
+  {
+    "id": "PD-2022-HPAI",
+    "partitionKey": "pastDisruptions",
+    "title": "2022 avian influenza egg shortage",
+    "productId": "SKU-EGG-0001",
+    "category": "eggs",
+    "date": "2025-01-27",
+    "durationDays": 96,
+    "rootCause": "HPAI, transport disruption or promotion oversell reduced available egg supply.",
+    "peakShortfallPct": 34,
+    "revenueLostEur": 18400000,
+    "mitigationsApplied": [
+      {
+        "action": "Fair-share allocation, promotion cancellation and store limits",
+        "outcome": "Recovered shelf availability within one week.",
+        "effectivenessScore": 0.78,
+        "costEur": 76000
+      }
+    ],
+    "lessonsLearned": [
+      "Cancel demand-driving promotions early",
+      "Keep one visible traffic-driver SKU per store",
+      "Document limits and customer wording"
+    ],
+    "notes": "Historical precedent used by retrieval agents."
+  },
+  {
+    "id": "PD-2023-ORGANIC-GAP",
+    "partitionKey": "pastDisruptions",
+    "title": "Organic egg depopulation in the west",
+    "productId": "SKU-EGG-0003",
+    "category": "eggs",
+    "date": "2025-01-27",
+    "durationDays": 42,
+    "rootCause": "HPAI, transport disruption or promotion oversell reduced available egg supply.",
+    "peakShortfallPct": 48,
+    "revenueLostEur": 3200000,
+    "mitigationsApplied": [
+      {
+        "action": "Fair-share allocation, promotion cancellation and store limits",
+        "outcome": "Recovered shelf availability within one week.",
+        "effectivenessScore": 0.78,
+        "costEur": 76000
+      }
+    ],
+    "lessonsLearned": [
+      "Cancel demand-driving promotions early",
+      "Keep one visible traffic-driver SKU per store",
+      "Document limits and customer wording"
+    ],
+    "notes": "Historical precedent used by retrieval agents."
+  },
+  {
+    "id": "PD-2024-LIQUID-EGG",
+    "partitionKey": "pastDisruptions",
+    "title": "Liquid egg processor outage",
+    "productId": "SKU-EGG-0009",
+    "category": "eggs",
+    "date": "2025-01-27",
+    "durationDays": 18,
+    "rootCause": "HPAI, transport disruption or promotion oversell reduced available egg supply.",
+    "peakShortfallPct": 29,
+    "revenueLostEur": 2100000,
+    "mitigationsApplied": [
+      {
+        "action": "Fair-share allocation, promotion cancellation and store limits",
+        "outcome": "Recovered shelf availability within one week.",
+        "effectivenessScore": 0.78,
+        "costEur": 76000
+      }
+    ],
+    "lessonsLearned": [
+      "Cancel demand-driving promotions early",
+      "Keep one visible traffic-driver SKU per store",
+      "Document limits and customer wording"
+    ],
+    "notes": "Historical precedent used by retrieval agents."
+  },
+  {
+    "id": "PD-2025-SOUTH-TRANSPORT",
+    "partitionKey": "pastDisruptions",
+    "title": "Southern chilled-road blockade",
+    "productId": "SKU-EGG-0002",
+    "category": "eggs",
+    "date": "2025-01-27",
+    "durationDays": 9,
+    "rootCause": "HPAI, transport disruption or promotion oversell reduced available egg supply.",
+    "peakShortfallPct": 22,
+    "revenueLostEur": 1700000,
+    "mitigationsApplied": [
+      {
+        "action": "Fair-share allocation, promotion cancellation and store limits",
+        "outcome": "Recovered shelf availability within one week.",
+        "effectivenessScore": 0.78,
+        "costEur": 76000
+      }
+    ],
+    "lessonsLearned": [
+      "Cancel demand-driving promotions early",
+      "Keep one visible traffic-driver SKU per store",
+      "Document limits and customer wording"
+    ],
+    "notes": "Historical precedent used by retrieval agents."
+  },
+  {
+    "id": "PD-2025-PROMO-OVERSELL",
+    "partitionKey": "pastDisruptions",
+    "title": "Breakfast promotion oversell",
+    "productId": "SKU-EGG-0005",
+    "category": "eggs",
+    "date": "2025-01-27",
+    "durationDays": 21,
+    "rootCause": "HPAI, transport disruption or promotion oversell reduced available egg supply.",
+    "peakShortfallPct": 26,
+    "revenueLostEur": 4300000,
+    "mitigationsApplied": [
+      {
+        "action": "Fair-share allocation, promotion cancellation and store limits",
+        "outcome": "Recovered shelf availability within one week.",
+        "effectivenessScore": 0.78,
+        "costEur": 76000
+      }
+    ],
+    "lessonsLearned": [
+      "Cancel demand-driving promotions early",
+      "Keep one visible traffic-driver SKU per store",
+      "Document limits and customer wording"
+    ],
+    "notes": "Historical precedent used by retrieval agents."
+  }
+]

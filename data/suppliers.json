@@ -1,0 +1,471 @@
+[
+  {
+    "id": "SUP-EGG-001",
+    "partitionKey": "suppliers",
+    "name": "Valmont Laying Cooperative",
+    "type": "producer-cooperative",
+    "country": "FR",
+    "region": "CENTRE",
+    "qualificationStatus": "qualified",
+    "qualificationLeadTimeDays": 0,
+    "leadTimeDays": 3,
+    "capacityCasesPerWeek": 69000,
+    "availableCapacityCasesPerWeek": 11500,
+    "unitPriceEurPerCase": 18.45,
+    "priceChangePct": 0,
+    "reliabilityScore": 0.94,
+    "sustainabilityScore": 0.67,
+    "co2KgPerCase": 1.75,
+    "farmingMethods": [
+      "free-range",
+      "barn"
+    ],
+    "certifications": [
+      "IFS Food",
+      "BRCGS"
+    ],
+    "avianInfluenzaStatus": "restricted-zone",
+    "riskFlags": [
+      "HPAI-control-zone"
+    ],
+    "notes": "Domestic suppliers include restricted-zone and culled sites; importers cost 20-45% more with longer lead times."
+  },
+  {
+    "id": "SUP-EGG-002",
+    "partitionKey": "suppliers",
+    "name": "Sud-Ouest Egg Producers Union",
+    "type": "producer-cooperative",
+    "country": "FR",
+    "region": "SOUTH",
+    "qualificationStatus": "qualified",
+    "qualificationLeadTimeDays": 0,
+    "leadTimeDays": 2,
+    "capacityCasesPerWeek": 78000,
+    "availableCapacityCasesPerWeek": 14000,
+    "unitPriceEurPerCase": 19.9,
+    "priceChangePct": 4,
+    "reliabilityScore": 0.93,
+    "sustainabilityScore": 0.71,
+    "co2KgPerCase": 2.0,
+    "farmingMethods": [
+      "barn",
+      "cage-free"
+    ],
+    "certifications": [
+      "IFS Food",
+      "BRCGS"
+    ],
+    "avianInfluenzaStatus": "restricted-zone",
+    "riskFlags": [
+      "HPAI-control-zone"
+    ],
+    "notes": "Domestic suppliers include restricted-zone and culled sites; importers cost 20-45% more with longer lead times."
+  },
+  {
+    "id": "SUP-EGG-003",
+    "partitionKey": "suppliers",
+    "name": "BioPoule Atlantique",
+    "type": "producer-cooperative",
+    "country": "FR",
+    "region": "WEST",
+    "qualificationStatus": "qualified",
+    "qualificationLeadTimeDays": 0,
+    "leadTimeDays": 3,
+    "capacityCasesPerWeek": 87000,
+    "availableCapacityCasesPerWeek": 16500,
+    "unitPriceEurPerCase": 21.35,
+    "priceChangePct": 7.5,
+    "reliabilityScore": 0.92,
+    "sustainabilityScore": 0.76,
+    "co2KgPerCase": 2.25,
+    "farmingMethods": [
+      "organic",
+      "free-range"
+    ],
+    "certifications": [
+      "IFS Food",
+      "BRCGS"
+    ],
+    "avianInfluenzaStatus": "culled",
+    "riskFlags": [
+      "HPAI-control-zone"
+    ],
+    "notes": "Domestic suppliers include restricted-zone and culled sites; importers cost 20-45% more with longer lead times."
+  },
+  {
+    "id": "SUP-EGG-004",
+    "partitionKey": "suppliers",
+    "name": "Est Oeufs Nutrition",
+    "type": "producer-cooperative",
+    "country": "FR",
+    "region": "EAST",
+    "qualificationStatus": "qualified",
+    "qualificationLeadTimeDays": 0,
+    "leadTimeDays": 2,
+    "capacityCasesPerWeek": 96000,
+    "availableCapacityCasesPerWeek": 19000,
+    "unitPriceEurPerCase": 22.8,
+    "priceChangePct": 6,
+    "reliabilityScore": 0.91,
+    "sustainabilityScore": 0.8,
+    "co2KgPerCase": 2.5,
+    "farmingMethods": [
+      "barn",
+      "cage-free"
+    ],
+    "certifications": [
+      "IFS Food",
+      "BRCGS"
+    ],
+    "avianInfluenzaStatus": "restricted-zone",
+    "riskFlags": [
+      "HPAI-control-zone"
+    ],
+    "notes": "Domestic suppliers include restricted-zone and culled sites; importers cost 20-45% more with longer lead times."
+  },
+  {
+    "id": "SUP-EGG-005",
+    "partitionKey": "suppliers",
+    "name": "Plaine Centrale Egg Packers",
+    "type": "packing-centre",
+    "country": "FR",
+    "region": "CENTRE",
+    "qualificationStatus": "qualified",
+    "qualificationLeadTimeDays": 0,
+    "leadTimeDays": 3,
+    "capacityCasesPerWeek": 105000,
+    "availableCapacityCasesPerWeek": 21500,
+    "unitPriceEurPerCase": 24.25,
+    "priceChangePct": 2,
+    "reliabilityScore": 0.9,
+    "sustainabilityScore": 0.84,
+    "co2KgPerCase": 2.75,
+    "farmingMethods": [
+      "free-range",
+      "barn"
+    ],
+    "certifications": [
+      "IFS Food",
+      "BRCGS"
+    ],
+    "avianInfluenzaStatus": "unaffected",
+    "riskFlags": [
+      "HPAI-control-zone"
+    ],
+    "notes": "Domestic suppliers include restricted-zone and culled sites; importers cost 20-45% more with longer lead times."
+  },
+  {
+    "id": "SUP-EGG-006",
+    "partitionKey": "suppliers",
+    "name": "Nordic Table Eggs A/S",
+    "type": "importer",
+    "country": "DK",
+    "region": "NORTH",
+    "qualificationStatus": "qualified",
+    "qualificationLeadTimeDays": 0,
+    "leadTimeDays": 6,
+    "capacityCasesPerWeek": 114000,
+    "availableCapacityCasesPerWeek": 30000,
+    "unitPriceEurPerCase": 31.7,
+    "priceChangePct": 28,
+    "reliabilityScore": 0.88,
+    "sustainabilityScore": 0.62,
+    "co2KgPerCase": 3.0,
+    "farmingMethods": [
+      "barn",
+      "cage-free"
+    ],
+    "certifications": [
+      "IFS Food",
+      "BRCGS"
+    ],
+    "avianInfluenzaStatus": "unaffected",
+    "riskFlags": [
+      "long-lead-time",
+      "20-45pct-price-premium"
+    ],
+    "notes": "Domestic suppliers include restricted-zone and culled sites; importers cost 20-45% more with longer lead times."
+  },
+  {
+    "id": "SUP-EGG-007",
+    "partitionKey": "suppliers",
+    "name": "Iberia Fresh Egg Trading",
+    "type": "importer",
+    "country": "ES",
+    "region": "SOUTH",
+    "qualificationStatus": "provisional",
+    "qualificationLeadTimeDays": 5,
+    "leadTimeDays": 7,
+    "capacityCasesPerWeek": 123000,
+    "availableCapacityCasesPerWeek": 33000,
+    "unitPriceEurPerCase": 33.15,
+    "priceChangePct": 34,
+    "reliabilityScore": 0.87,
+    "sustainabilityScore": 0.67,
+    "co2KgPerCase": 3.25,
+    "farmingMethods": [
+      "free-range",
+      "barn"
+    ],
+    "certifications": [
+      "IFS Food",
+      "BRCGS"
+    ],
+    "avianInfluenzaStatus": "unaffected",
+    "riskFlags": [
+      "long-lead-time",
+      "20-45pct-price-premium"
+    ],
+    "notes": "Domestic suppliers include restricted-zone and culled sites; importers cost 20-45% more with longer lead times."
+  },
+  {
+    "id": "SUP-EGG-008",
+    "partitionKey": "suppliers",
+    "name": "Baltic Egg Imports",
+    "type": "importer",
+    "country": "PL",
+    "region": "EAST",
+    "qualificationStatus": "qualified",
+    "qualificationLeadTimeDays": 0,
+    "leadTimeDays": 8,
+    "capacityCasesPerWeek": 132000,
+    "availableCapacityCasesPerWeek": 36000,
+    "unitPriceEurPerCase": 34.6,
+    "priceChangePct": 43,
+    "reliabilityScore": 0.86,
+    "sustainabilityScore": 0.71,
+    "co2KgPerCase": 1.5,
+    "farmingMethods": [
+      "barn",
+      "cage-free"
+    ],
+    "certifications": [
+      "IFS Food",
+      "BRCGS"
+    ],
+    "avianInfluenzaStatus": "unaffected",
+    "riskFlags": [
+      "long-lead-time",
+      "20-45pct-price-premium"
+    ],
+    "notes": "Domestic suppliers include restricted-zone and culled sites; importers cost 20-45% more with longer lead times."
+  },
+  {
+    "id": "SUP-EGG-009",
+    "partitionKey": "suppliers",
+    "name": "Benelux Cage-Free Imports",
+    "type": "importer",
+    "country": "NL",
+    "region": "NORTH",
+    "qualificationStatus": "qualified",
+    "qualificationLeadTimeDays": 0,
+    "leadTimeDays": 9,
+    "capacityCasesPerWeek": 141000,
+    "availableCapacityCasesPerWeek": 39000,
+    "unitPriceEurPerCase": 36.05,
+    "priceChangePct": 30,
+    "reliabilityScore": 0.85,
+    "sustainabilityScore": 0.76,
+    "co2KgPerCase": 1.75,
+    "farmingMethods": [
+      "free-range",
+      "barn"
+    ],
+    "certifications": [
+      "IFS Food",
+      "BRCGS"
+    ],
+    "avianInfluenzaStatus": "unaffected",
+    "riskFlags": [
+      "long-lead-time",
+      "20-45pct-price-premium"
+    ],
+    "notes": "Domestic suppliers include restricted-zone and culled sites; importers cost 20-45% more with longer lead times."
+  },
+  {
+    "id": "SUP-EGG-010",
+    "partitionKey": "suppliers",
+    "name": "Alpine Fresh Egg GmbH",
+    "type": "importer",
+    "country": "AT",
+    "region": "EAST",
+    "qualificationStatus": "qualified",
+    "qualificationLeadTimeDays": 0,
+    "leadTimeDays": 10,
+    "capacityCasesPerWeek": 150000,
+    "availableCapacityCasesPerWeek": 42000,
+    "unitPriceEurPerCase": 37.5,
+    "priceChangePct": 38,
+    "reliabilityScore": 0.84,
+    "sustainabilityScore": 0.8,
+    "co2KgPerCase": 2.0,
+    "farmingMethods": [
+      "barn",
+      "cage-free"
+    ],
+    "certifications": [
+      "IFS Food",
+      "BRCGS"
+    ],
+    "avianInfluenzaStatus": "unaffected",
+    "riskFlags": [
+      "long-lead-time",
+      "20-45pct-price-premium"
+    ],
+    "notes": "Domestic suppliers include restricted-zone and culled sites; importers cost 20-45% more with longer lead times."
+  },
+  {
+    "id": "SUP-EGG-011",
+    "partitionKey": "suppliers",
+    "name": "North Sea Packing Centre",
+    "type": "importer",
+    "country": "BE",
+    "region": "NORTH",
+    "qualificationStatus": "qualified",
+    "qualificationLeadTimeDays": 0,
+    "leadTimeDays": 11,
+    "capacityCasesPerWeek": 159000,
+    "availableCapacityCasesPerWeek": 45000,
+    "unitPriceEurPerCase": 38.95,
+    "priceChangePct": 24,
+    "reliabilityScore": 0.83,
+    "sustainabilityScore": 0.84,
+    "co2KgPerCase": 2.25,
+    "farmingMethods": [
+      "free-range",
+      "barn"
+    ],
+    "certifications": [
+      "IFS Food",
+      "BRCGS"
+    ],
+    "avianInfluenzaStatus": "unaffected",
+    "riskFlags": [
+      "long-lead-time",
+      "20-45pct-price-premium"
+    ],
+    "notes": "Domestic suppliers include restricted-zone and culled sites; importers cost 20-45% more with longer lead times."
+  },
+  {
+    "id": "SUP-EGG-012",
+    "partitionKey": "suppliers",
+    "name": "GreenNest Organic Importers",
+    "type": "importer",
+    "country": "DE",
+    "region": "EAST",
+    "qualificationStatus": "provisional",
+    "qualificationLeadTimeDays": 5,
+    "leadTimeDays": 6,
+    "capacityCasesPerWeek": 168000,
+    "availableCapacityCasesPerWeek": 48000,
+    "unitPriceEurPerCase": 40.4,
+    "priceChangePct": 45,
+    "reliabilityScore": 0.82,
+    "sustainabilityScore": 0.62,
+    "co2KgPerCase": 2.5,
+    "farmingMethods": [
+      "organic",
+      "free-range"
+    ],
+    "certifications": [
+      "IFS Food",
+      "BRCGS"
+    ],
+    "avianInfluenzaStatus": "unaffected",
+    "riskFlags": [
+      "long-lead-time",
+      "20-45pct-price-premium"
+    ],
+    "notes": "Domestic suppliers include restricted-zone and culled sites; importers cost 20-45% more with longer lead times."
+  },
+  {
+    "id": "SUP-EGG-013",
+    "partitionKey": "suppliers",
+    "name": "Ovalis Liquid Egg Processing",
+    "type": "processor",
+    "country": "FR",
+    "region": "CENTRE",
+    "qualificationStatus": "qualified",
+    "qualificationLeadTimeDays": 0,
+    "leadTimeDays": 5,
+    "capacityCasesPerWeek": 177000,
+    "availableCapacityCasesPerWeek": 51000,
+    "unitPriceEurPerCase": 35.85,
+    "priceChangePct": 18,
+    "reliabilityScore": 0.81,
+    "sustainabilityScore": 0.67,
+    "co2KgPerCase": 2.75,
+    "farmingMethods": [
+      "free-range",
+      "barn"
+    ],
+    "certifications": [
+      "FSSC 22000"
+    ],
+    "avianInfluenzaStatus": "unaffected",
+    "riskFlags": [
+      "input-egg-rationing"
+    ],
+    "notes": "Domestic suppliers include restricted-zone and culled sites; importers cost 20-45% more with longer lead times."
+  },
+  {
+    "id": "SUP-EGG-014",
+    "partitionKey": "suppliers",
+    "name": "EuroAlbumen Industrial Eggs",
+    "type": "processor",
+    "country": "BE",
+    "region": "NORTH",
+    "qualificationStatus": "qualified",
+    "qualificationLeadTimeDays": 0,
+    "leadTimeDays": 6,
+    "capacityCasesPerWeek": 186000,
+    "availableCapacityCasesPerWeek": 54000,
+    "unitPriceEurPerCase": 37.3,
+    "priceChangePct": 22,
+    "reliabilityScore": 0.8,
+    "sustainabilityScore": 0.71,
+    "co2KgPerCase": 3.0,
+    "farmingMethods": [
+      "barn",
+      "cage-free"
+    ],
+    "certifications": [
+      "FSSC 22000"
+    ],
+    "avianInfluenzaStatus": "unaffected",
+    "riskFlags": [
+      "input-egg-rationing"
+    ],
+    "notes": "Domestic suppliers include restricted-zone and culled sites; importers cost 20-45% more with longer lead times."
+  },
+  {
+    "id": "SUP-EGG-015",
+    "partitionKey": "suppliers",
+    "name": "NovaPlant Functional Ingredients",
+    "type": "processor",
+    "country": "FR",
+    "region": "WEST",
+    "qualificationStatus": "qualified",
+    "qualificationLeadTimeDays": 0,
+    "leadTimeDays": 4,
+    "capacityCasesPerWeek": 195000,
+    "availableCapacityCasesPerWeek": 57000,
+    "unitPriceEurPerCase": 38.75,
+    "priceChangePct": 11,
+    "reliabilityScore": 0.78,
+    "sustainabilityScore": 0.76,
+    "co2KgPerCase": 3.25,
+    "farmingMethods": [
+      "free-range",
+      "barn"
+    ],
+    "certifications": [
+      "FSSC 22000"
+    ],
+    "avianInfluenzaStatus": "unaffected",
+    "riskFlags": [
+      "input-egg-rationing"
+    ],
+    "notes": "Domestic suppliers include restricted-zone and culled sites; importers cost 20-45% more with longer lead times."
+  }
+]

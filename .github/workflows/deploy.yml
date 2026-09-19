@@ -1,0 +1,148 @@
+name: Deploy to Azure Container Apps
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  AZURE_RESOURCE_GROUP: rg-grocery-disruption
+  AZURE_LOCATION: swedencentral
+  CORE_DEPLOYMENT_NAME: gsdr-core
+  IMAGE_REPOSITORY: grocery-disruption
+
+jobs:
+  deploy:
+    name: Build and deploy
+    runs-on: ubuntu-latest
+    outputs:
+      appUrl: ${{ steps.app.outputs.appUrl }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Ensure resource group exists
+        shell: bash
+        run: |
+          set -euo pipefail
+          az group create \
+            --name "$AZURE_RESOURCE_GROUP" \
+            --location "$AZURE_LOCATION" \
+            --output none
+
+      - name: Deploy core infrastructure
+        id: coredeploy
+        shell: bash
+        run: |
+          set -euo pipefail
+          az deployment group create \
+            --resource-group "$AZURE_RESOURCE_GROUP" \
+            --name "$CORE_DEPLOYMENT_NAME" \
+            --template-file infra/main.bicep \
+            --parameters location="$AZURE_LOCATION" namePrefix=gsdr \
+            --output none
+
+      - name: Read core infrastructure outputs
+        id: core
+        shell: bash
+        run: |
+          set -euo pipefail
+          outputs=$(az deployment group show \
+            --resource-group "$AZURE_RESOURCE_GROUP" \
+            --name "$CORE_DEPLOYMENT_NAME" \
+            --query properties.outputs -o json)
+          echo "$outputs" | jq -r 'to_entries[] | "\(.key)=\(.value.value)"' >> "$GITHUB_OUTPUT"
+
+      - name: Build image in Azure Container Registry
+        id: build
+        shell: bash
+        env:
+          ACR_NAME: ${{ steps.core.outputs.acrName }}
+          ACR_LOGIN_SERVER: ${{ steps.core.outputs.acrLoginServer }}
+        run: |
+          set -euo pipefail
+          short_sha="${GITHUB_SHA::7}"
+          image="${ACR_LOGIN_SERVER}/${IMAGE_REPOSITORY}:${short_sha}"
+          az acr build \
+            --registry "$ACR_NAME" \
+            --image "${IMAGE_REPOSITORY}:${short_sha}" \
+            --image "${IMAGE_REPOSITORY}:latest" \
+            --file Dockerfile \
+            .
+          echo "shortSha=$short_sha" >> "$GITHUB_OUTPUT"
+          echo "image=$image" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy container app
+        id: app
+        shell: bash
+        run: |
+          set -euo pipefail
+          app_url=$(az deployment group create \
+            --resource-group "$AZURE_RESOURCE_GROUP" \
+            --name "gsdr-app-${{ steps.build.outputs.shortSha }}" \
+            --template-file infra/app.bicep \
+            --parameters \
+              namePrefix=gsdr \
+              containerAppEnvironmentId='${{ steps.core.outputs.containerAppEnvironmentId }}' \
+              acrLoginServer='${{ steps.core.outputs.acrLoginServer }}' \
+              containerImage='${{ steps.build.outputs.image }}' \
+              identityId='${{ steps.core.outputs.identityId }}' \
+              identityClientId='${{ steps.core.outputs.identityClientId }}' \
+              aiProjectEndpoint='${{ steps.core.outputs.aiProjectEndpoint }}' \
+              openAiEndpoint='${{ steps.core.outputs.openAiEndpoint }}' \
+              modelDeploymentName='${{ steps.core.outputs.modelDeploymentName }}' \
+              embeddingDeploymentName='${{ steps.core.outputs.embeddingDeploymentName }}' \
+              cosmosEndpoint='${{ steps.core.outputs.cosmosEndpoint }}' \
+              cosmosDatabase=GroceryDisruptionDB \
+              searchEndpoint='${{ steps.core.outputs.searchEndpoint }}' \
+              searchIndexName=grocery-disruption-knowledge \
+              storageBlobEndpoint='${{ steps.core.outputs.storageBlobEndpoint }}' \
+              appInsightsConnectionString='${{ steps.core.outputs.appInsightsConnectionString }}' \
+            --query properties.outputs.appUrl.value -o tsv)
+          echo "appUrl=$app_url" >> "$GITHUB_OUTPUT"
+          echo "Front-end application URL: $app_url"
+
+      - name: Poll health endpoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          health_url="${{ steps.app.outputs.appUrl }}/api/health"
+          for attempt in $(seq 1 30); do
+            code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 15 "$health_url" || echo 000)
+            if [ "$code" = "200" ]; then
+              echo "Health check passed on attempt $attempt."
+              exit 0
+            fi
+            echo "Attempt $attempt: HTTP $code from $health_url; retrying in 10s."
+            sleep 10
+          done
+          echo "::error::Health check never returned HTTP 200 for $health_url"
+          exit 1
+
+      - name: Job summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "### Grocery Supply Disruption Response deployment"
+            echo ""
+            echo "| Field | Value |"
+            echo "| --- | --- |"
+            echo "| Front-end application URL | ${{ steps.app.outputs.appUrl }} |"
+            echo "| Resource group | $AZURE_RESOURCE_GROUP |"
+            echo "| Core deployment | $CORE_DEPLOYMENT_NAME |"
+            echo "| Image | \`${{ steps.build.outputs.image }}\` |"
+            echo "| Commit | \`${GITHUB_SHA::7}\` |"
+          } >> "$GITHUB_STEP_SUMMARY"

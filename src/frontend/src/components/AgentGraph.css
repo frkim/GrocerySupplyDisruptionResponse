@@ -1,0 +1,339 @@
+.graph {
+  min-height: 620px;
+}
+
+.graph__head-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.graph__parallel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(251, 191, 36, 0.45);
+  background: var(--warn-soft);
+  color: var(--warn);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.graph__parallel-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--warn);
+  animation: graph-pulse 1.2s ease-in-out infinite;
+}
+
+.graph__canvas {
+  padding: 4px 10px 8px;
+  overflow: auto;
+  background:
+    radial-gradient(700px 340px at 50% 0%, rgba(56, 189, 248, 0.05), transparent 70%),
+    var(--surface-inset);
+  border-bottom: 1px solid var(--line);
+}
+
+.graph__svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  min-width: 1040px;
+}
+
+/* ---- Edges ---- */
+
+.graph__edge {
+  fill: none;
+  stroke: #232b3d;
+  stroke-width: 1.5;
+  transition: stroke 0.4s ease, stroke-width 0.4s ease, opacity 0.4s ease;
+  opacity: 0.85;
+}
+
+.graph__edge--live {
+  stroke: rgba(56, 189, 248, 0.6);
+  stroke-width: 1.9;
+  opacity: 1;
+}
+
+.graph__edge--flowing {
+  stroke: var(--accent);
+  stroke-width: 2.2;
+  stroke-dasharray: 6 7;
+  animation: graph-dash 0.9s linear infinite;
+}
+
+@keyframes graph-dash {
+  to {
+    stroke-dashoffset: -26;
+  }
+}
+
+/* ---- Nodes ---- */
+
+.graph__node {
+  cursor: pointer;
+  outline: none;
+}
+
+.graph__node-halo {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 2;
+  transition: stroke 0.25s ease;
+}
+
+.graph__node-box {
+  fill: #161c29;
+  stroke: #2a3244;
+  stroke-width: 1.2;
+  transition: fill 0.3s ease, stroke 0.3s ease;
+}
+
+.graph__node-label {
+  fill: #93a0b6;
+  font-size: 12.5px;
+  font-weight: 600;
+  font-family: var(--font);
+  transition: fill 0.3s ease;
+  pointer-events: none;
+}
+
+.graph__node-badge {
+  fill: #59657c;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  font-family: var(--mono);
+  pointer-events: none;
+}
+
+.graph__node-sub {
+  fill: #59657c;
+  font-size: 9.5px;
+  font-family: var(--mono);
+  letter-spacing: 0.02em;
+  pointer-events: none;
+}
+
+.graph__node-state {
+  fill: var(--idle);
+  transition: fill 0.3s ease;
+}
+
+.graph__node-ping {
+  fill: none;
+  stroke-width: 1.6;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: graph-ping 1.6s ease-out infinite;
+}
+
+@keyframes graph-ping {
+  0% {
+    transform: scale(1);
+    opacity: 0.85;
+  }
+  100% {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+
+@keyframes graph-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+/* State: pending */
+.graph__node--pending .graph__node-box {
+  fill: rgba(18, 23, 34, 0.85);
+  stroke: #262e40;
+}
+
+/* State: running */
+.graph__node--running .graph__node-box {
+  fill: rgba(251, 191, 36, 0.09);
+  stroke: var(--warn);
+  animation: graph-node-breathe 1.6s ease-in-out infinite;
+}
+.graph__node--running .graph__node-label {
+  fill: #f6e6bd;
+}
+.graph__node--running .graph__node-sub,
+.graph__node--running .graph__node-badge {
+  fill: #cbab6d;
+}
+.graph__node--running .graph__node-state {
+  fill: var(--warn);
+}
+.graph__node--running .graph__node-ping {
+  stroke: var(--warn);
+}
+
+@keyframes graph-node-breathe {
+  0%,
+  100% {
+    stroke-opacity: 1;
+  }
+  50% {
+    stroke-opacity: 0.42;
+  }
+}
+
+/* State: completed */
+.graph__node--completed .graph__node-box {
+  fill: rgba(52, 211, 153, 0.07);
+  stroke: rgba(52, 211, 153, 0.65);
+}
+.graph__node--completed .graph__node-label {
+  fill: #dcf4e9;
+}
+.graph__node--completed .graph__node-state {
+  fill: var(--ok);
+}
+
+/* State: failed */
+.graph__node--failed .graph__node-box {
+  fill: rgba(248, 113, 113, 0.09);
+  stroke: var(--bad);
+}
+.graph__node--failed .graph__node-label {
+  fill: #fbdcdc;
+}
+.graph__node--failed .graph__node-state {
+  fill: var(--bad);
+}
+
+/* State: skipped */
+.graph__node--skipped .graph__node-box {
+  fill: rgba(18, 23, 34, 0.6);
+  stroke: #3a4358;
+  stroke-dasharray: 5 4;
+}
+.graph__node--skipped .graph__node-label {
+  fill: #6d7789;
+}
+.graph__node--skipped .graph__node-state {
+  fill: #46506a;
+}
+
+:root[data-theme='light'] .graph__node-box,
+:root[data-theme='light'] .graph__node--pending .graph__node-box,
+:root[data-theme='light'] .graph__node--skipped .graph__node-box {
+  fill: #f5f7fb;
+  stroke: var(--line-strong);
+}
+
+/* State: awaiting */
+.graph__node--awaiting .graph__node-box {
+  fill: rgba(167, 139, 250, 0.12);
+  stroke: var(--gate);
+  animation: graph-node-breathe 1.1s ease-in-out infinite;
+}
+.graph__node--awaiting .graph__node-label {
+  fill: #e6ddff;
+}
+.graph__node--awaiting .graph__node-state {
+  fill: var(--gate);
+}
+.graph__node--awaiting .graph__node-ping {
+  stroke: var(--gate);
+}
+
+/* Selection + hover */
+.graph__node:hover .graph__node-box {
+  stroke: var(--accent);
+}
+.graph__node--selected .graph__node-halo {
+  stroke: var(--accent);
+}
+.graph__node:focus-visible .graph__node-halo {
+  stroke: var(--accent);
+}
+
+/* ---- Legend ---- */
+
+.graph__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 22px;
+  padding: 10px 16px 12px;
+  background: rgba(255, 255, 255, 0.012);
+}
+
+.graph__legend-group {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+}
+
+.graph__legend-title {
+  font-size: 9.5px;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin-right: 2px;
+}
+
+.graph__legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.graph__legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--idle);
+  border: 1px solid transparent;
+}
+
+.graph__legend-item--running .graph__legend-dot {
+  background: var(--warn);
+}
+.graph__legend-item--completed .graph__legend-dot {
+  background: var(--ok);
+}
+.graph__legend-item--failed .graph__legend-dot {
+  background: var(--bad);
+}
+.graph__legend-item--awaiting .graph__legend-dot {
+  background: var(--gate);
+}
+.graph__legend-item--skipped .graph__legend-dot {
+  background: transparent;
+  border: 1px dashed #4c566d;
+}
+
+.graph__legend-badge {
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 1px 5px;
+  border-radius: 4px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface-3);
+  color: var(--text-dim);
+}
+
+.graph__legend-swatch {
+  width: 10px;
+  height: 4px;
+  border-radius: 2px;
+}

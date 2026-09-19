@@ -1,0 +1,170 @@
+[
+  {
+    "id": "DC-NORTH-01",
+    "partitionKey": "warehouses",
+    "name": "Northern Regional DC",
+    "region": "NORTH",
+    "city": "City-01",
+    "storesServed": 80,
+    "chilledCapacityPallets": 2600,
+    "chilledUtilizationPct": 84,
+    "ambientCapacityPallets": 5200,
+    "inboundDoorsPerDay": 70,
+    "crossDockCapable": true,
+    "transferLeadTimeHours": {
+      "DC-CENTRE-01": 6,
+      "DC-NORTH-01": 6,
+      "DC-SOUTH-01": 7,
+      "DC-EAST-01": 5,
+      "DC-WEST-01": 8
+    },
+    "notes": "Warehouse is part of egg-crisis fair-share allocation network."
+  },
+  {
+    "id": "DC-NORTH-02",
+    "partitionKey": "warehouses",
+    "name": "Coastal North Cross-Dock",
+    "region": "NORTH",
+    "city": "City-02",
+    "storesServed": 105,
+    "chilledCapacityPallets": 3050,
+    "chilledUtilizationPct": 86,
+    "ambientCapacityPallets": 6100,
+    "inboundDoorsPerDay": 84,
+    "crossDockCapable": true,
+    "transferLeadTimeHours": {
+      "DC-CENTRE-01": 6,
+      "DC-NORTH-01": 6,
+      "DC-SOUTH-01": 7,
+      "DC-EAST-01": 5,
+      "DC-WEST-01": 8
+    },
+    "notes": "Warehouse is part of egg-crisis fair-share allocation network."
+  },
+  {
+    "id": "DC-SOUTH-01",
+    "partitionKey": "warehouses",
+    "name": "Southern Regional DC",
+    "region": "SOUTH",
+    "city": "City-01",
+    "storesServed": 130,
+    "chilledCapacityPallets": 3500,
+    "chilledUtilizationPct": 88,
+    "ambientCapacityPallets": 7000,
+    "inboundDoorsPerDay": 98,
+    "crossDockCapable": true,
+    "transferLeadTimeHours": {
+      "DC-CENTRE-01": 6,
+      "DC-NORTH-01": 6,
+      "DC-SOUTH-01": 7,
+      "DC-EAST-01": 5,
+      "DC-WEST-01": 8
+    },
+    "notes": "Warehouse is part of egg-crisis fair-share allocation network."
+  },
+  {
+    "id": "DC-SOUTH-02",
+    "partitionKey": "warehouses",
+    "name": "Mediterranean Fresh DC",
+    "region": "SOUTH",
+    "city": "City-02",
+    "storesServed": 155,
+    "chilledCapacityPallets": 3950,
+    "chilledUtilizationPct": 90,
+    "ambientCapacityPallets": 7900,
+    "inboundDoorsPerDay": 112,
+    "crossDockCapable": true,
+    "transferLeadTimeHours": {
+      "DC-CENTRE-01": 6,
+      "DC-NORTH-01": 6,
+      "DC-SOUTH-01": 7,
+      "DC-EAST-01": 5,
+      "DC-WEST-01": 8
+    },
+    "notes": "Warehouse is part of egg-crisis fair-share allocation network."
+  },
+  {
+    "id": "DC-EAST-01",
+    "partitionKey": "warehouses",
+    "name": "Eastern Regional DC",
+    "region": "EAST",
+    "city": "City-01",
+    "storesServed": 180,
+    "chilledCapacityPallets": 4400,
+    "chilledUtilizationPct": 92,
+    "ambientCapacityPallets": 8800,
+    "inboundDoorsPerDay": 126,
+    "crossDockCapable": true,
+    "transferLeadTimeHours": {
+      "DC-CENTRE-01": 6,
+      "DC-NORTH-01": 6,
+      "DC-SOUTH-01": 7,
+      "DC-EAST-01": 5,
+      "DC-WEST-01": 8
+    },
+    "notes": "Warehouse is part of egg-crisis fair-share allocation network."
+  },
+  {
+    "id": "DC-EAST-02",
+    "partitionKey": "warehouses",
+    "name": "Alpine Gateway DC",
+    "region": "EAST",
+    "city": "City-02",
+    "storesServed": 205,
+    "chilledCapacityPallets": 4850,
+    "chilledUtilizationPct": 84,
+    "ambientCapacityPallets": 9700,
+    "inboundDoorsPerDay": 140,
+    "crossDockCapable": true,
+    "transferLeadTimeHours": {
+      "DC-CENTRE-01": 6,
+      "DC-NORTH-01": 6,
+      "DC-SOUTH-01": 7,
+      "DC-EAST-01": 5,
+      "DC-WEST-01": 8
+    },
+    "notes": "Warehouse is part of egg-crisis fair-share allocation network."
+  },
+  {
+    "id": "DC-WEST-01",
+    "partitionKey": "warehouses",
+    "name": "Western Regional DC",
+    "region": "WEST",
+    "city": "City-01",
+    "storesServed": 230,
+    "chilledCapacityPallets": 5300,
+    "chilledUtilizationPct": 86,
+    "ambientCapacityPallets": 10600,
+    "inboundDoorsPerDay": 154,
+    "crossDockCapable": true,
+    "transferLeadTimeHours": {
+      "DC-CENTRE-01": 6,
+      "DC-NORTH-01": 6,
+      "DC-SOUTH-01": 7,
+      "DC-EAST-01": 5,
+      "DC-WEST-01": 8
+    },
+    "notes": "Warehouse is part of egg-crisis fair-share allocation network."
+  },
+  {
+    "id": "DC-CENTRE-01",
+    "partitionKey": "warehouses",
+    "name": "Central National Hub",
+    "region": "CENTRE",
+    "city": "City-01",
+    "storesServed": 255,
+    "chilledCapacityPallets": 5750,
+    "chilledUtilizationPct": 88,
+    "ambientCapacityPallets": 11500,
+    "inboundDoorsPerDay": 168,
+    "crossDockCapable": true,
+    "transferLeadTimeHours": {
+      "DC-CENTRE-01": 6,
+      "DC-NORTH-01": 6,
+      "DC-SOUTH-01": 7,
+      "DC-EAST-01": 5,
+      "DC-WEST-01": 8
+    },
+    "notes": "Warehouse is part of egg-crisis fair-share allocation network."
+  }
+]

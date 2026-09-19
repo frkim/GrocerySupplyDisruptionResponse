@@ -1,0 +1,78 @@
+import type { DisruptionSignal, OrchestrationGraph } from '../types';
+
+/**
+ * Topology used before `/api/scenario` answers — and if it never answers.
+ * The backend is authoritative; these coordinates simply keep the console
+ * legible when it is offline.
+ */
+export const FALLBACK_GRAPH: OrchestrationGraph = {
+  nodes: [
+    { id: 'signal_normalizer', label: 'Signal Normalizer', description: 'Normalises the inbound egg-shortage signal.', hostingMode: 'system', group: 'detection', row: 0, col: 2 },
+    { id: 'situation_assessment', label: 'Situation Assessment', description: 'Assesses shortage severity, scope, and immediate response posture.', hostingMode: 'foundry', group: 'situational', row: 1, col: 2 },
+    { id: 'historical_knowledge', label: 'Historical Knowledge', description: 'Retrieves prior shortage lessons, playbooks, and policy guidance.', hostingMode: 'foundry', group: 'situational', row: 2, col: 2 },
+    { id: 'demand_forecast', label: 'Demand Forecast', description: 'Models panic-buying demand and regional sales velocity.', hostingMode: 'local', group: 'impact', row: 3, col: 0 },
+    { id: 'network_inventory', label: 'Network Inventory', description: 'Calculates warehouse and store cover across the retail network.', hostingMode: 'local', group: 'impact', row: 3, col: 1 },
+    { id: 'financial_impact', label: 'Financial Impact', description: 'Estimates revenue exposure, penalties, and promotion costs.', hostingMode: 'a2a', group: 'impact', row: 3, col: 3 },
+    { id: 'store_impact', label: 'Store & Customer Impact', description: 'Identifies store availability, customer risk, and banner exposure.', hostingMode: 'a2a', group: 'impact', row: 3, col: 4 },
+    { id: 'impact_synthesis', label: 'Impact Synthesis', description: 'Consolidates demand, inventory, finance, and store impact.', hostingMode: 'foundry', group: 'impact', row: 4, col: 2 },
+    { id: 'response_planner', label: 'Response Planner', description: 'Generates four response options for the egg shortage.', hostingMode: 'foundry', group: 'remediation', row: 5, col: 2 },
+    { id: 'sourcing_procurement', label: 'Sourcing & Procurement', description: 'Validates alternate supplier capacity and lead times.', hostingMode: 'a2a', group: 'validation', row: 6, col: 0 },
+    { id: 'allocation_fairness', label: 'Allocation & Fair Share', description: 'Tests fair-share allocation across regions and store formats.', hostingMode: 'local', group: 'validation', row: 6, col: 1 },
+    { id: 'substitution_assortment', label: 'Substitution & Assortment', description: 'Reviews substitutes, own-brand impacts, and assortment shifts.', hostingMode: 'local', group: 'validation', row: 6, col: 2 },
+    { id: 'pricing_compliance', label: 'Pricing & Compliance', description: 'Checks pricing, consumer protection, and promotion obligations.', hostingMode: 'a2a', group: 'validation', row: 6, col: 3 },
+    { id: 'logistics_cold_chain', label: 'Logistics & Cold Chain', description: 'Validates chilled-road capacity and DC transfer feasibility.', hostingMode: 'a2a', group: 'validation', row: 6, col: 4 },
+    { id: 'scenario_evaluation', label: 'Scenario Evaluation', description: 'Scores every option across five decision dimensions.', hostingMode: 'foundry', group: 'decision', row: 7, col: 2 },
+    { id: 'deliberation', label: 'Deliberation', description: 'Debates close calls and prepares a recommendation.', hostingMode: 'foundry', group: 'decision', row: 8, col: 2 },
+    { id: 'executive_gate', label: 'Executive Gate', description: 'Human-in-the-loop approval checkpoint.', hostingMode: 'system', group: 'decision', row: 9, col: 2 },
+    { id: 'store_operations', label: 'Store Operations', description: 'Turns the approved option into store actions and signage tasks.', hostingMode: 'foundry', group: 'execution', row: 10, col: 1 },
+    { id: 'customer_communication', label: 'Customer Communication', description: 'Prepares customer-facing messages for availability and rationing.', hostingMode: 'foundry', group: 'execution', row: 10, col: 3 },
+    { id: 'executive_briefing', label: 'Executive Briefing', description: 'Produces the executive briefing for Vivalis Retail Group.', hostingMode: 'foundry', group: 'execution', row: 11, col: 2 },
+  ],
+  edges: [
+    { from: 'signal_normalizer', to: 'situation_assessment' },
+    { from: 'situation_assessment', to: 'historical_knowledge' },
+    { from: 'historical_knowledge', to: 'demand_forecast' },
+    { from: 'historical_knowledge', to: 'network_inventory' },
+    { from: 'historical_knowledge', to: 'financial_impact' },
+    { from: 'historical_knowledge', to: 'store_impact' },
+    { from: 'demand_forecast', to: 'impact_synthesis' },
+    { from: 'network_inventory', to: 'impact_synthesis' },
+    { from: 'financial_impact', to: 'impact_synthesis' },
+    { from: 'store_impact', to: 'impact_synthesis' },
+    { from: 'impact_synthesis', to: 'response_planner' },
+    { from: 'response_planner', to: 'sourcing_procurement' },
+    { from: 'response_planner', to: 'allocation_fairness' },
+    { from: 'response_planner', to: 'substitution_assortment' },
+    { from: 'response_planner', to: 'pricing_compliance' },
+    { from: 'response_planner', to: 'logistics_cold_chain' },
+    { from: 'sourcing_procurement', to: 'scenario_evaluation' },
+    { from: 'allocation_fairness', to: 'scenario_evaluation' },
+    { from: 'substitution_assortment', to: 'scenario_evaluation' },
+    { from: 'pricing_compliance', to: 'scenario_evaluation' },
+    { from: 'logistics_cold_chain', to: 'scenario_evaluation' },
+    { from: 'scenario_evaluation', to: 'deliberation' },
+    { from: 'deliberation', to: 'executive_gate' },
+    { from: 'executive_gate', to: 'store_operations' },
+    { from: 'executive_gate', to: 'customer_communication' },
+    { from: 'store_operations', to: 'executive_briefing' },
+    { from: 'customer_communication', to: 'executive_briefing' },
+  ],
+};
+
+export const FALLBACK_SIGNAL: DisruptionSignal = {
+  productId: 'SKU-EGG-0001',
+  productName: 'Free-Range Eggs Medium x6',
+  category: 'eggs',
+  supplierId: 'SUP-EGG-001',
+  confidence: 0.91,
+  depletionDaysMin: 4,
+  depletionDaysMax: 9,
+  supplyShortfallPct: 38,
+  demandSurgePct: 44,
+  impactedSkus: ['SKU-EGG-0001'],
+  affectedRegions: ['NORTH', 'SOUTH', 'EAST', 'WEST', 'CENTRE'],
+  affectedWarehouses: ['DC-NORTH-01', 'DC-SOUTH-01', 'DC-EAST-01', 'DC-WEST-01', 'DC-CENTRE-01'],
+  rootCause: 'Nationwide highly pathogenic avian influenza outbreak has reduced shell-egg supply while customers stockpile across all regions.',
+  source: 'databricks-stub',
+  detectedAt: '',
+};

@@ -1,0 +1,170 @@
+[
+  {
+    "id": "PB-ALLOC-01",
+    "partitionKey": "playbooks",
+    "name": "Fair-share warehouse allocation",
+    "category": "allocation",
+    "trigger": "Egg cover, shelf availability or supplier confirmations breach crisis thresholds.",
+    "steps": [
+      "Confirm affected ids",
+      "Quantify cases, EUR cost and days cover",
+      "Apply threshold and approval",
+      "Communicate execution plan"
+    ],
+    "typicalCostEur": 45000,
+    "leadTimeDays": 1,
+    "requiredApprovals": [
+      "Supply Chain Director"
+    ],
+    "expectedEffectivenessScore": 0.68,
+    "regulatoryNotes": "Avoid misleading consumers and retain traceability.",
+    "notes": "Vivalis crisis playbook."
+  },
+  {
+    "id": "PB-SRC-01",
+    "partitionKey": "playbooks",
+    "name": "Emergency importer onboarding",
+    "category": "sourcing",
+    "trigger": "Egg cover, shelf availability or supplier confirmations breach crisis thresholds.",
+    "steps": [
+      "Confirm affected ids",
+      "Quantify cases, EUR cost and days cover",
+      "Apply threshold and approval",
+      "Communicate execution plan"
+    ],
+    "typicalCostEur": 57000,
+    "leadTimeDays": 2,
+    "requiredApprovals": [
+      "Supply Chain Director"
+    ],
+    "expectedEffectivenessScore": 0.71,
+    "regulatoryNotes": "Avoid misleading consumers and retain traceability.",
+    "notes": "Vivalis crisis playbook."
+  },
+  {
+    "id": "PB-SUB-01",
+    "partitionKey": "playbooks",
+    "name": "Bakery recipe substitution",
+    "category": "substitution",
+    "trigger": "Egg cover, shelf availability or supplier confirmations breach crisis thresholds.",
+    "steps": [
+      "Confirm affected ids",
+      "Quantify cases, EUR cost and days cover",
+      "Apply threshold and approval",
+      "Communicate execution plan"
+    ],
+    "typicalCostEur": 69000,
+    "leadTimeDays": 3,
+    "requiredApprovals": [
+      "Supply Chain Director"
+    ],
+    "expectedEffectivenessScore": 0.73,
+    "regulatoryNotes": "Avoid misleading consumers and retain traceability.",
+    "notes": "Vivalis crisis playbook."
+  },
+  {
+    "id": "PB-PRICE-01",
+    "partitionKey": "playbooks",
+    "name": "Shortage pricing compliance",
+    "category": "pricing",
+    "trigger": "Egg cover, shelf availability or supplier confirmations breach crisis thresholds.",
+    "steps": [
+      "Confirm affected ids",
+      "Quantify cases, EUR cost and days cover",
+      "Apply threshold and approval",
+      "Communicate execution plan"
+    ],
+    "typicalCostEur": 81000,
+    "leadTimeDays": 4,
+    "requiredApprovals": [
+      "Supply Chain Director"
+    ],
+    "expectedEffectivenessScore": 0.76,
+    "regulatoryNotes": "Avoid misleading consumers and retain traceability.",
+    "notes": "Vivalis crisis playbook."
+  },
+  {
+    "id": "PB-COMM-01",
+    "partitionKey": "playbooks",
+    "name": "Store signage and colleague script",
+    "category": "communication",
+    "trigger": "Egg cover, shelf availability or supplier confirmations breach crisis thresholds.",
+    "steps": [
+      "Confirm affected ids",
+      "Quantify cases, EUR cost and days cover",
+      "Apply threshold and approval",
+      "Communicate execution plan"
+    ],
+    "typicalCostEur": 93000,
+    "leadTimeDays": 5,
+    "requiredApprovals": [
+      "Supply Chain Director"
+    ],
+    "expectedEffectivenessScore": 0.78,
+    "regulatoryNotes": "Avoid misleading consumers and retain traceability.",
+    "notes": "Vivalis crisis playbook."
+  },
+  {
+    "id": "PB-LOG-01",
+    "partitionKey": "playbooks",
+    "name": "Chilled cross-dock recovery",
+    "category": "logistics",
+    "trigger": "Egg cover, shelf availability or supplier confirmations breach crisis thresholds.",
+    "steps": [
+      "Confirm affected ids",
+      "Quantify cases, EUR cost and days cover",
+      "Apply threshold and approval",
+      "Communicate execution plan"
+    ],
+    "typicalCostEur": 105000,
+    "leadTimeDays": 1,
+    "requiredApprovals": [
+      "Supply Chain Director"
+    ],
+    "expectedEffectivenessScore": 0.81,
+    "regulatoryNotes": "Avoid misleading consumers and retain traceability.",
+    "notes": "Vivalis crisis playbook."
+  },
+  {
+    "id": "PB-PROMO-01",
+    "partitionKey": "playbooks",
+    "name": "Promotion cancellation ladder",
+    "category": "promotion",
+    "trigger": "Egg cover, shelf availability or supplier confirmations breach crisis thresholds.",
+    "steps": [
+      "Confirm affected ids",
+      "Quantify cases, EUR cost and days cover",
+      "Apply threshold and approval",
+      "Communicate execution plan"
+    ],
+    "typicalCostEur": 117000,
+    "leadTimeDays": 2,
+    "requiredApprovals": [
+      "Supply Chain Director"
+    ],
+    "expectedEffectivenessScore": 0.83,
+    "regulatoryNotes": "Avoid misleading consumers and retain traceability.",
+    "notes": "Vivalis crisis playbook."
+  },
+  {
+    "id": "PB-EXEC-01",
+    "partitionKey": "playbooks",
+    "name": "Executive egg-crisis gate",
+    "category": "communication",
+    "trigger": "Egg cover, shelf availability or supplier confirmations breach crisis thresholds.",
+    "steps": [
+      "Confirm affected ids",
+      "Quantify cases, EUR cost and days cover",
+      "Apply threshold and approval",
+      "Communicate execution plan"
+    ],
+    "typicalCostEur": 129000,
+    "leadTimeDays": 3,
+    "requiredApprovals": [
+      "Supply Chain Director"
+    ],
+    "expectedEffectivenessScore": 0.86,
+    "regulatoryNotes": "Avoid misleading consumers and retain traceability.",
+    "notes": "Vivalis crisis playbook."
+  }
+]

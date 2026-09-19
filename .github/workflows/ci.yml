@@ -1,0 +1,216 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+env:
+  PIP_INDEX_URL: https://packagefeedproxy.microsoft.io/pypi/simple
+  PIP_DISABLE_PIP_VERSION_CHECK: '1'
+
+jobs:
+  backend:
+    name: Backend smoke and compile
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install backend dependencies
+        working-directory: src/backend
+        run: python -m pip install -r requirements.txt
+
+      - name: Smoke import
+        working-directory: src/backend
+        run: python -c "from app.main import app"
+
+      - name: Compile Python
+        run: python -m compileall -q src
+
+  frontend:
+    name: Frontend build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: src/frontend/package-lock.json
+
+      - name: Configure protected npm feed
+        run: npm config set registry https://packagefeedproxy.microsoft.io/npm/
+
+      - name: Install frontend dependencies
+        working-directory: src/frontend
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: src/frontend
+        run: npm run build
+
+  data:
+    name: Data validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Validate data files and references
+        shell: python
+        run: |
+          import json
+          import sys
+          from pathlib import Path
+
+          root = Path('data')
+          required = {
+              'products': 'products.json',
+              'suppliers': 'suppliers.json',
+              'warehouses': 'warehouses.json',
+              'stores': 'stores.json',
+              'inventory': 'inventory.json',
+              'demandForecast': 'demand-forecast.json',
+              'substitutes': 'substitutes.json',
+              'commitments': 'commitments.json',
+              'promotions': 'promotions.json',
+              'replenishmentSchedule': 'replenishment-schedule.json',
+              'pastDisruptions': 'past-disruptions.json',
+              'playbooks': 'playbooks.json',
+              'stakeholders': 'stakeholders.json',
+              'signals': 'signals.json',
+          }
+          errors = []
+          datasets = {}
+
+          for container, filename in required.items():
+              path = root / filename
+              if not path.exists():
+                  errors.append(f'missing {path}')
+                  continue
+              try:
+                  data = json.loads(path.read_text(encoding='utf-8'))
+              except Exception as exc:
+                  errors.append(f'{path}: invalid JSON: {exc}')
+                  continue
+              if not isinstance(data, list):
+                  errors.append(f'{path}: root must be a JSON array')
+                  continue
+              ids = set()
+              for index, item in enumerate(data):
+                  if not isinstance(item, dict):
+                      errors.append(f'{path}[{index}]: item must be an object')
+                      continue
+                  item_id = item.get('id')
+                  if not item_id:
+                      errors.append(f'{path}[{index}]: missing id')
+                  elif item_id in ids:
+                      errors.append(f'{path}: duplicate id {item_id}')
+                  ids.add(item_id)
+                  if 'partitionKey' not in item:
+                      errors.append(f'{path}[{index}]: missing partitionKey')
+              datasets[container] = data
+
+          product_ids = {item.get('id') for item in datasets.get('products', [])}
+          supplier_ids = {item.get('id') for item in datasets.get('suppliers', [])}
+          warehouse_ids = {item.get('id') for item in datasets.get('warehouses', [])}
+          store_ids = {item.get('id') for item in datasets.get('stores', [])}
+
+          def require_known(path, value, known, label):
+              if value and value not in known:
+                  errors.append(f'{path}: unknown {label} {value}')
+
+          for product in datasets.get('products', []):
+              path = f"products:{product.get('id')}"
+              require_known(path, product.get('primarySupplierId'), supplier_ids, 'supplier')
+              for supplier_id in product.get('alternateSupplierIds', []) or []:
+                  require_known(path, supplier_id, supplier_ids, 'alternate supplier')
+              for input_id in product.get('inputProductIds', []) or []:
+                  require_known(path, input_id, product_ids, 'input product')
+              for substitute_id in product.get('substituteProductIds', []) or []:
+                  require_known(path, substitute_id, product_ids, 'substitute product')
+
+          for store in datasets.get('stores', []):
+              path = f"stores:{store.get('id')}"
+              require_known(path, store.get('servedByWarehouseId'), warehouse_ids, 'warehouse')
+              for sku in store.get('skusStocked', []) or []:
+                  require_known(path, sku, product_ids, 'SKU')
+
+          for item in datasets.get('inventory', []):
+              path = f"inventory:{item.get('id')}"
+              require_known(path, item.get('productId'), product_ids, 'product')
+              location_type = item.get('locationType')
+              if location_type == 'warehouse':
+                  require_known(path, item.get('locationId'), warehouse_ids, 'warehouse')
+              elif location_type == 'store':
+                  require_known(path, item.get('locationId'), store_ids, 'store')
+
+          for row in datasets.get('demandForecast', []):
+              require_known(f"demandForecast:{row.get('id')}", row.get('productId'), product_ids, 'product')
+
+          for row in datasets.get('substitutes', []):
+              path = f"substitutes:{row.get('id')}"
+              require_known(path, row.get('productId'), product_ids, 'product')
+              require_known(path, row.get('substituteProductId'), product_ids, 'substitute product')
+
+          for row in datasets.get('commitments', []):
+              require_known(f"commitments:{row.get('id')}", row.get('skuId'), product_ids, 'SKU')
+
+          for row in datasets.get('promotions', []):
+              for sku in row.get('skuIds', []) or []:
+                  require_known(f"promotions:{row.get('id')}", sku, product_ids, 'SKU')
+
+          for row in datasets.get('replenishmentSchedule', []):
+              path = f"replenishmentSchedule:{row.get('id')}"
+              require_known(path, row.get('warehouseId'), warehouse_ids, 'warehouse')
+              require_known(path, row.get('supplierId'), supplier_ids, 'supplier')
+              require_known(path, row.get('productId'), product_ids, 'product')
+
+          for row in datasets.get('pastDisruptions', []):
+              require_known(f"pastDisruptions:{row.get('id')}", row.get('productId'), product_ids, 'product')
+
+          for row in datasets.get('signals', []):
+              path = f"signals:{row.get('id')}"
+              require_known(path, row.get('productId'), product_ids, 'product')
+              require_known(path, row.get('supplierId'), supplier_ids, 'supplier')
+              for sku in row.get('impactedSkus', []) or []:
+                  require_known(path, sku, product_ids, 'impacted SKU')
+              for warehouse_id in row.get('affectedWarehouses', []) or []:
+                  require_known(path, warehouse_id, warehouse_ids, 'warehouse')
+
+          knowledge = root / 'knowledge'
+          required_knowledge = [
+              '2022-avian-influenza-postmortem.md',
+              'fair-share-allocation-policy.md',
+              'warehouse-allocation-playbook.md',
+              'egg-substitution-and-reformulation-guide.md',
+              'pricing-and-consumer-protection-rules.md',
+              'food-safety-and-avian-influenza-regulation.md',
+              'store-communication-and-signage-standards.md',
+              'responsible-sourcing-and-animal-welfare-standards.md',
+          ]
+          for filename in required_knowledge:
+              if not (knowledge / filename).exists():
+                  errors.append(f'missing {knowledge / filename}')
+
+          if errors:
+              print('\n'.join(errors))
+              sys.exit(1)
+          print(f'Validated {len(required)} JSON files and {len(required_knowledge)} knowledge files.')

@@ -1,0 +1,172 @@
+[
+  {
+    "id": "PRO-0001",
+    "partitionKey": "promotions",
+    "name": "Breakfast Week — Eggs 2 for 3",
+    "skuIds": [
+      "SKU-EGG-0001",
+      "SKU-EGG-0002"
+    ],
+    "status": "live",
+    "startDate": "2026-02-04",
+    "endDate": "2026-02-20",
+    "mechanic": "multibuy",
+    "expectedUpliftPct": 38,
+    "forecastIncrementalCases": 20900,
+    "printedLeafletCommitted": true,
+    "cancellationCostEur": 68000,
+    "regions": [
+      "NORTH",
+      "SOUTH"
+    ],
+    "notes": "Demand-shaping review required; live egg promotions should be cancelled."
+  },
+  {
+    "id": "PRO-0002",
+    "partitionKey": "promotions",
+    "name": "Family Baking Festival",
+    "skuIds": [
+      "SKU-EGG-0001",
+      "SKU-BAK-0101"
+    ],
+    "status": "live",
+    "startDate": "2026-02-04",
+    "endDate": "2026-02-20",
+    "mechanic": "multibuy",
+    "expectedUpliftPct": 31,
+    "forecastIncrementalCases": 17050,
+    "printedLeafletCommitted": false,
+    "cancellationCostEur": 52000,
+    "regions": [
+      "CENTRE",
+      "WEST"
+    ],
+    "notes": "Demand-shaping review required; live egg promotions should be cancelled."
+  },
+  {
+    "id": "PRO-0003",
+    "partitionKey": "promotions",
+    "name": "Drive Bulk Tray Deal",
+    "skuIds": [
+      "SKU-EGG-0008"
+    ],
+    "status": "live",
+    "startDate": "2026-02-04",
+    "endDate": "2026-02-20",
+    "mechanic": "multibuy",
+    "expectedUpliftPct": 46,
+    "forecastIncrementalCases": 25300,
+    "printedLeafletCommitted": true,
+    "cancellationCostEur": 9000,
+    "regions": [
+      "NORTH",
+      "EAST"
+    ],
+    "notes": "Demand-shaping review required; live egg promotions should be cancelled."
+  },
+  {
+    "id": "PRO-0004",
+    "partitionKey": "promotions",
+    "name": "Organic Breakfast Loyalty",
+    "skuIds": [
+      "SKU-EGG-0003"
+    ],
+    "status": "planned",
+    "startDate": "2026-02-04",
+    "endDate": "2026-02-20",
+    "mechanic": "multibuy",
+    "expectedUpliftPct": 22,
+    "forecastIncrementalCases": 12100,
+    "printedLeafletCommitted": false,
+    "cancellationCostEur": 0,
+    "regions": [
+      "WEST",
+      "CENTRE"
+    ],
+    "notes": "Demand-shaping review required; live egg promotions should be cancelled."
+  },
+  {
+    "id": "PRO-0005",
+    "partitionKey": "promotions",
+    "name": "Ready Meal Lunch Deal",
+    "skuIds": [
+      "SKU-RDY-0201"
+    ],
+    "status": "live",
+    "startDate": "2026-02-04",
+    "endDate": "2026-02-20",
+    "mechanic": "multibuy",
+    "expectedUpliftPct": 18,
+    "forecastIncrementalCases": 9900,
+    "printedLeafletCommitted": true,
+    "cancellationCostEur": 26000,
+    "regions": [
+      "SOUTH",
+      "EAST"
+    ],
+    "notes": "Demand-shaping review required; live egg promotions should be cancelled."
+  },
+  {
+    "id": "PRO-0006",
+    "partitionKey": "promotions",
+    "name": "Patisserie Weekend",
+    "skuIds": [
+      "SKU-BAK-0103"
+    ],
+    "status": "planned",
+    "startDate": "2026-02-04",
+    "endDate": "2026-02-20",
+    "mechanic": "multibuy",
+    "expectedUpliftPct": 25,
+    "forecastIncrementalCases": 13750,
+    "printedLeafletCommitted": false,
+    "cancellationCostEur": 0,
+    "regions": [
+      "NORTH",
+      "CENTRE"
+    ],
+    "notes": "Demand-shaping review required; live egg promotions should be cancelled."
+  },
+  {
+    "id": "PRO-0007",
+    "partitionKey": "promotions",
+    "name": "Value Six-Pack Feature",
+    "skuIds": [
+      "SKU-EGG-0005"
+    ],
+    "status": "live",
+    "startDate": "2026-02-04",
+    "endDate": "2026-02-20",
+    "mechanic": "multibuy",
+    "expectedUpliftPct": 34,
+    "forecastIncrementalCases": 18700,
+    "printedLeafletCommitted": true,
+    "cancellationCostEur": 31000,
+    "regions": [
+      "SOUTH",
+      "WEST"
+    ],
+    "notes": "Demand-shaping review required; live egg promotions should be cancelled."
+  },
+  {
+    "id": "PRO-0008",
+    "partitionKey": "promotions",
+    "name": "Plant-Based Baking Trial",
+    "skuIds": [
+      "SKU-ALT-0001"
+    ],
+    "status": "planned",
+    "startDate": "2026-02-04",
+    "endDate": "2026-02-20",
+    "mechanic": "multibuy",
+    "expectedUpliftPct": 12,
+    "forecastIncrementalCases": 6600,
+    "printedLeafletCommitted": false,
+    "cancellationCostEur": 3500,
+    "regions": [
+      "WEST",
+      "CENTRE"
+    ],
+    "notes": "Demand-shaping review required; live egg promotions should be cancelled."
+  }
+]
