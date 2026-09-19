@@ -287,6 +287,7 @@ class ArmTransportTests(QuietTest):
     def test_malformed_oversized_error_and_wrong_status_responses_fail(self):
         for body, status in (
             (b"not-json", 200), (b"null", 200), (b"[]", 200), (b'"value"', 200),
+            (b'"Restart succeeded"', 200),
             (b"\xff", 200), (b"x" * 2_000_001, 200),
             (json.dumps({"error": {"message": FAKE_TOKEN}}).encode(), 200),
             (b"{}", 204), (b"{}", 301), (b"{}", 500),
@@ -298,12 +299,26 @@ class ArmTransportTests(QuietTest):
                 self.assertNotIn(FAKE_TOKEN, str(caught.exception))
 
     def test_empty_restart_and_async_start_responses_are_supported(self):
-        self.reply(b"")
-        self.assertEqual(self.client.request("POST", api(APP + "/revisions/rev/restart"), 100),
-                         response())
+        for body in (b"", b"null", b'"Restart succeeded"'):
+            with self.subTest(body=body):
+                self.reply(body)
+                self.assertEqual(
+                    self.client.request("POST", api(APP + "/revisions/rev/restart"), 100),
+                    response(),
+                )
         self.reply(b"", 202, {"Location": LOCATION})
         self.assertEqual(self.client.request("POST", api(JOB + "/start"), 100),
                          response(status=202, location=LOCATION))
+
+    def test_restart_ack_is_not_accepted_for_job_start_or_unsuccessful_messages(self):
+        for path, body in (
+            (JOB + "/start", b'"Restart succeeded"'),
+            (APP + "/revisions/rev/restart", b'"Restart failed"'),
+        ):
+            with self.subTest(path=path, body=body):
+                self.reply(body)
+                with self.assertRaisesRegex(RuntimeError, "JSON object"):
+                    self.client.request("POST", api(path), 100)
 
     def test_deadline_limits_http_waits_and_prevents_late_requests(self):
         self.reply(b"{}")

@@ -279,11 +279,17 @@ class ArmClient:
             result = json.loads(body) if body.strip() else None
         except (ValueError, UnicodeError):
             raise RuntimeError("ARM returned malformed JSON.") from None
-        if body.strip() and not isinstance(result, dict):
+        # Revision restart can return the JSON string "Restart succeeded".
+        restart_ack = (
+            method == "POST" and status == 200
+            and urlsplit(path).path.endswith("/restart")
+            and (result is None or result == "Restart succeeded")
+        )
+        if body.strip() and not isinstance(result, dict) and not restart_ack:
             raise RuntimeError("ARM response must be a JSON object.")
         if isinstance(result, dict) and "error" in result:
             raise RuntimeError("ARM returned an error response.")
-        return status, result, location
+        return status, None if restart_ack else result, location
 
 
 def _api(path: str) -> str:
