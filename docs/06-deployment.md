@@ -18,9 +18,9 @@ interactive azd authentication; GitHub uses the `AZURE_CREDENTIALS` repository s
   `https://packagefeedproxy.microsoft.io/pypi/simple`.
 
 Provisioning creates billable Container Apps, a manual seed job, ACR, Cosmos DB
-shared throughput, a private endpoint/DNS zone, AI Search, Foundry model deployments,
-Blob Storage, and observability resources. Cosmos DB is private; the frontend,
-Search, Storage, and model endpoints remain publicly reachable with their configured
+shared throughput, private endpoints/DNS zones, AI Search, Foundry model deployments,
+Blob Storage, and observability resources. Cosmos DB and Blob are private; the frontend,
+Search and model endpoints remain publicly reachable with their configured
 authentication. This is a **demonstration**, not a production security baseline.
 Only fictional data should be uploaded. The UI/API has no application-level user
 authentication; restrict ingress or add authentication before exposing sensitive data.
@@ -78,11 +78,12 @@ The retained deployer data roles do not bypass the database firewall. The deploy
 principal is resolved by azd as `AZURE_PRINCIPAL_ID`; do not set it to a
 client/application ID or copy a developer's object ID into CI.
 
-### Private Cosmos connectivity
+### Private data connectivity
 
 The app and seed job share a VNet-integrated Consumption environment. A separate
-subnet hosts the Cosmos SQL private endpoint, with a
-`privatelink.documents.azure.com` zone linked to the VNet. Cosmos has
+subnet hosts Cosmos SQL and Blob private endpoints, with
+`privatelink.documents.azure.com` and `privatelink.blob.core.windows.net`
+zones linked to the VNet. Both services disable public access and key authentication. Cosmos has
 `publicNetworkAccess: Disabled`, `networkAclBypass: None`, and key authentication
 disabled. No runner-IP allowlist or Azure-wide firewall bypass is needed.
 
@@ -314,6 +315,12 @@ environment cannot create any replicas after a provisioning failure, merely
 increasing the app deployment timeout is not evidence that it has recovered.
 Retained resources should be reviewed separately before any approved cleanup;
 do not assume that a successful replacement deletes or stops older workloads.
+
+Cosmos DB and Blob Storage both keep public network access disabled. Their SQL
+and Blob private endpoints share the private-endpoint subnet, with private DNS
+zones linked to the application VNet. An existing managed-identity role does not
+bypass a disabled public endpoint: a Blob `AuthorizationFailure` during seeding
+also requires checking its private endpoint and DNS, not repeatedly granting roles.
 
 ## References
 

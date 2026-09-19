@@ -99,6 +99,16 @@ class DeploymentContractTests(unittest.TestCase):
         self.assertIn("workloadProfileType: 'Consumption'", core)
         self.assertIn("internal: false", core)
 
+    def test_blob_seeding_uses_private_connectivity_without_public_or_key_access(self):
+        core = (ROOT / "infra/core.bicep").read_text(encoding="utf-8")
+        storage = core.split("resource storage '", 1)[1].split("resource blobService", 1)[0]
+        self.assertIn("publicNetworkAccess: 'Disabled'", storage)
+        self.assertIn("allowSharedKeyAccess: false", storage)
+        self.assertIn("name: 'privatelink.blob.${environment().suffixes.storage}'", core)
+        self.assertIn("privateLinkServiceId: storage.id", core)
+        self.assertIn("privateDnsZoneId: blobPrivateDns.id", core)
+        self.assertIn("'blob'", core)
+
     def test_private_seed_job_uses_the_real_image_and_scoped_managed_identity(self):
         app = (ROOT / "infra/app.bicep").read_text(encoding="utf-8")
         job = app.split("resource seedJob ", 1)[1].split("output appUrl", 1)[0]

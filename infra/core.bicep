@@ -129,6 +129,7 @@ resource storage 'Microsoft.Storage/storageAccounts@2023-05-01' = {
   properties: {
     allowBlobPublicAccess: false
     allowSharedKeyAccess: false
+    publicNetworkAccess: 'Disabled'
     minimumTlsVersion: 'TLS1_2'
     supportsHttpsTrafficOnly: true
   }
@@ -444,6 +445,61 @@ resource cosmosPrivateDnsGroup 'Microsoft.Network/privateEndpoints/privateDnsZon
   }
 }
 
+resource blobPrivateDns 'Microsoft.Network/privateDnsZones@2020-06-01' = {
+  name: 'privatelink.blob.${environment().suffixes.storage}'
+  location: 'global'
+  tags: tags
+}
+
+resource blobDnsLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = {
+  parent: blobPrivateDns
+  name: '${namePrefix}-blob-vnet'
+  location: 'global'
+  properties: {
+    registrationEnabled: false
+    virtualNetwork: {
+      id: virtualNetwork.id
+    }
+  }
+}
+
+resource blobPrivateEndpoint 'Microsoft.Network/privateEndpoints@2024-05-01' = {
+  name: '${namePrefix}-blob-pe-${suffix}'
+  location: location
+  tags: tags
+  properties: {
+    subnet: {
+      id: virtualNetwork.properties.subnets[1].id
+    }
+    privateLinkServiceConnections: [
+      {
+        name: 'storage-blob'
+        properties: {
+          privateLinkServiceId: storage.id
+          groupIds: [
+            'blob'
+          ]
+        }
+      }
+    ]
+  }
+}
+
+resource blobPrivateDnsGroup 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2024-05-01' = {
+  parent: blobPrivateEndpoint
+  name: 'default'
+  properties: {
+    privateDnsZoneConfigs: [
+      {
+        name: 'storage-blob'
+        properties: {
+          privateDnsZoneId: blobPrivateDns.id
+        }
+      }
+    ]
+  }
+}
+
 // Preserve prior environments and their subnet during non-destructive recovery.
 resource containerAppEnvironment 'Microsoft.App/managedEnvironments@2024-03-01' = {
   name: '${namePrefix}-env-private-v2-${suffix}'
@@ -471,6 +527,8 @@ resource containerAppEnvironment 'Microsoft.App/managedEnvironments@2024-03-01' 
   dependsOn: [
     cosmosDnsLink
     cosmosPrivateDnsGroup
+    blobDnsLink
+    blobPrivateDnsGroup
   ]
 }
 

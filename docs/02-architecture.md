@@ -66,7 +66,7 @@ Every SSE frame is emitted as `data: <json>\n\n`. The event `type` values are `r
 | --- | --- |
 | Azure Container Apps | Hosts the single FastAPI container that serves API and built UI. |
 | Container Apps manual job | Seeds data and registers agents inside the app's VNet using the same image and managed identity. |
-| Virtual network, Private Link, private DNS | Connect the app and seed job to Cosmos without enabling its public endpoint. |
+| Virtual network, Private Link, private DNS | Connect the app and seed job to Cosmos and Blob Storage without enabling their public endpoints. |
 | Azure Container Registry | Stores the `grocery-disruption` container image. |
 | User-assigned managed identity | Gives the app least-privilege access without application secrets. |
 | Microsoft Foundry | Stores and invokes Foundry-hosted prompt agents with the `gsdr` prefix. |
@@ -85,8 +85,8 @@ Every Azure dependency is optional at process startup. If Cosmos DB is not confi
 Application code authenticates to Azure services through `DefaultAzureCredential`. In Azure, `AZURE_CLIENT_ID` selects the user-assigned managed identity. No service keys are read by the application or committed to the repository. The deployment assigns only the roles needed for ACR pull, Foundry/Azure OpenAI use, Search data and service access, Cosmos data access, Storage blob data access, and telemetry export.
 
 The deployed app and seed job pin the credential chain to managed identity.
-Cosmos public access and trusted-service bypass are disabled. Both containers use
-the Cosmos SQL private endpoint and private DNS inside a VNet-integrated
+Cosmos and Blob public access are disabled, with no Cosmos trusted-service bypass.
+Both containers use SQL and Blob private endpoints and private DNS inside a VNet-integrated
 Consumption environment. GitHub starts the seed job through ARM and waits for its
 specific execution; no private GitHub runner or public database allowlist is needed.
 Only after the job succeeds does deployment restart the app to clear startup

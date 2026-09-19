@@ -149,7 +149,7 @@ and `-Location` parameters. These identifiers are configuration, not credentials
 `azd up` provisions infrastructure and identity permissions, builds the image
 remotely, and deploys the app plus a manual seed job. The job seeds Cosmos DB and
 Search/Blob knowledge and registers Foundry agents inside the app's VNet. Cosmos
-remains private; GitHub never needs a database firewall exception. The deployment
+and Blob Storage remain private; GitHub needs no data-plane firewall exception. The deployment
 then restarts the app and verifies its public UI and API. This creates billable resources
 and requires model quota plus permission to assign roles. Review the changes first
 with `azd provision --preview`. See [deployment prerequisites and configuration](docs/06-deployment.md).
