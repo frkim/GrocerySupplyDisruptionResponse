@@ -47,6 +47,10 @@ try {
     $parameters = $case['parameters']
     & $env:TEST_GATE_SCRIPT @parameters
 }
+catch {
+    [Console]::Error.WriteLine($_.Exception.Message)
+    exit 1
+}
 finally {
     @{ calls = @($calls.ToArray()); sleeps = @($sleeps.ToArray()) } |
         ConvertTo-Json -Depth 10 | Set-Content -LiteralPath trace.json
@@ -210,6 +214,7 @@ class AcrPullGateTests(unittest.TestCase):
         )
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("does not match deployment subscription", result.stderr)
+        self.assertNotIn("\x1b[", result.stderr)
         self.assertEqual(len(calls), 1)
 
     def test_identity_must_be_user_assigned_in_target_subscription(self):
