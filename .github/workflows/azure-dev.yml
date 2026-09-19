@@ -83,7 +83,7 @@ jobs:
         run: |
           ./scripts/setup-azd.ps1 -EnvironmentName $env:AZURE_ENV_NAME -SubscriptionId $env:AZURE_SUBSCRIPTION_ID -TenantId $env:AZURE_TENANT_ID -Location $env:AZURE_LOCATION
 
-      - name: Provision infrastructure and seed data
+      - name: Provision infrastructure and private connectivity
         shell: pwsh
         run: |
           azd provision --no-prompt --environment $env:AZURE_ENV_NAME
@@ -101,7 +101,7 @@ jobs:
           }
           ./scripts/verify-acr-pull.ps1 -IdentityResourceId $outputs['SERVICE_APP_IDENTITY_ID'] -RegistryName $outputs['AZURE_CONTAINER_REGISTRY_NAME'] -ResourceGroup $outputs['AZURE_RESOURCE_GROUP'] -SubscriptionId $env:AZURE_SUBSCRIPTION_ID
 
-      - name: Build, deploy and verify application
+      - name: Build, deploy, seed privately and verify application
         shell: pwsh
         run: |
           azd deploy --no-prompt --environment $env:AZURE_ENV_NAME

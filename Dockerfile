@@ -22,6 +22,7 @@ RUN python -m pip install --no-cache-dir -r requirements.txt
 
 COPY src/backend/app ./app
 COPY data ./data
+COPY scripts ./scripts
 COPY --from=frontend /app/src/frontend/dist ./app/static
 
 EXPOSE 8000

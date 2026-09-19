@@ -17,9 +17,11 @@ interactive azd authentication; GitHub uses the `AZURE_CREDENTIALS` repository s
   `https://packagefeedproxy.microsoft.io/npm/` and
   `https://packagefeedproxy.microsoft.io/pypi/simple`.
 
-Provisioning creates billable Container Apps, ACR, Cosmos DB shared throughput,
-AI Search, Foundry model deployments, Blob Storage, and observability resources.
-This is a public-endpoint **demonstration**, not a production security baseline.
+Provisioning creates billable Container Apps, a manual seed job, ACR, Cosmos DB
+shared throughput, a private endpoint/DNS zone, AI Search, Foundry model deployments,
+Blob Storage, and observability resources. Cosmos DB is private; the frontend,
+Search, Storage, and model endpoints remain publicly reachable with their configured
+authentication. This is a **demonstration**, not a production security baseline.
 Only fictional data should be uploaded. The UI/API has no application-level user
 authentication; restrict ingress or add authentication before exposing sensitive data.
 Azure resource access uses managed identity and resource-scoped RBAC.
@@ -63,16 +65,39 @@ setup followed by `azd up`, not a second independent deployment implementation.
 | Phase | Behavior |
 | --- | --- |
 | Preprovision | Checks/sets up Python dependencies needed for deployment hooks. |
-| Provision | Creates the resource group, core services, identities, and resource-scoped data roles. |
-| Postprovision | Upserts the 14 datasets, uploads/indexes the 8 knowledge documents, and registers Foundry agents. Errors fail the deployment rather than claiming readiness. |
-| Build and deploy | Builds the root Dockerfile using ACR remote build, then applies `infra/app.bicep` with the real image and app configuration in one revision. |
-| Postdeploy | Polls and checks the real frontend, health endpoint, and scenario before reporting a verified URL. |
+| Provision | Creates the resource group, core services, private Cosmos connectivity, identities, and resource-scoped data roles. |
+| Postprovision | Validates outputs. Data-plane operations are deferred to the in-network job, not run on GitHub. |
+| Build and deploy | Builds the root Dockerfile using ACR remote build, then applies `infra/app.bicep` with the real image for both the app and manual seed job. |
+| Postdeploy | Starts the seed job, waits for that exact execution to succeed, restarts the app revision to clear startup fallback caches, then checks the frontend, health, and scenario before publishing a verified URL. |
 
-The runtime identity and the deployment identity are separate. Deployment needs
-data-plane access to seed Cosmos/Search/Storage and manage Foundry definitions;
-Azure management-plane Contributor is not enough. Bicep grants those roles to
-the deployment principal resolved by azd as `AZURE_PRINCIPAL_ID`. Do not set that
-to a client/application ID or copy a developer's object ID into CI.
+The runtime/seed-job identity and deployment identity are separate. The job uses
+the app's user-assigned managed identity and existing resource-scoped data roles
+to seed Cosmos/Search/Storage and register Foundry definitions. GitHub's deployment
+identity starts and monitors it through ARM; it never needs public access to Cosmos.
+The retained deployer data roles do not bypass the database firewall. The deployment
+principal is resolved by azd as `AZURE_PRINCIPAL_ID`; do not set it to a
+client/application ID or copy a developer's object ID into CI.
+
+### Private Cosmos connectivity
+
+The app and seed job share a VNet-integrated Consumption environment. A separate
+subnet hosts the Cosmos SQL private endpoint, with a
+`privatelink.documents.azure.com` zone linked to the VNet. Cosmos has
+`publicNetworkAccess: Disabled`, `networkAclBypass: None`, and key authentication
+disabled. No runner-IP allowlist or Azure-wide firewall bypass is needed.
+
+The environment name includes `env-private`. Azure cannot retrofit VNet integration
+onto the original non-VNet environment, so the template creates a new environment
+without deleting the old one. During the initial repair no Container App had yet
+been deployed. An app already deployed in an old environment requires an explicit
+migration; the template cannot change its environment in place. Review unused
+resources separately rather than deleting them automatically.
+
+The manual job uses the same image as the app, including `scripts/` and the bundled
+data. It upserts 14 datasets, indexes eight knowledge documents, and registers the
+Foundry agents. It has no ingress and is not scheduled; each deployment starts one
+execution, with no automatic replica retries. A failed or timed-out job fails the
+deployment. Inspect its execution logs before retrying. Seeding is idempotent.
 
 The app uses azd's revision-based deployment. `infra/main.bicep` intentionally
 does not deploy the Container App; `infra/app.parameters.json` receives the new
@@ -87,7 +112,7 @@ active runs. Use a maintenance window for demonstrations in progress.
 
 The bundled files support offline development. Azure deployment is not considered
 successful merely because the app can silently fall back to bundled data.
-Postprovision seeding and agent registration must succeed.
+The private seed job and agent registration must succeed.
 
 ## Configuration
 
@@ -107,9 +132,9 @@ changes the embedding deployment's name, not its vector dimensions. The knowledg
 index and current seed script expect 3072-dimensional `text-embedding-3-large`
 vectors; changing the embedding model requires a corresponding index migration.
 
-After infrastructure exists, `azd deploy` rebuilds/redeploys just the application.
-Run `azd provision` for infrastructure, seed data, knowledge, or agent definition
-updates so the postprovision hook also runs.
+After infrastructure exists, `azd deploy` rebuilds/redeploys the app and job and
+reruns seeding/agent registration. Use it for seed data, knowledge, or agent
+definition changes. `azd provision` changes infrastructure only.
 
 ## GitHub Actions
 
@@ -246,7 +271,9 @@ can be supplied until the resources and application have been deployed.
 | Unexpected OIDC error | Confirm the run uses the latest `main` workflow; the current configuration uses `creds`, not federated login. |
 | Role assignment denied | Ask an administrator for the required role-assignment rights at the deployment scope. |
 | AcrPull gate fails | Inspect the reported runtime principal and ACR scope, verify the provisioned `AcrPull` assignment and deployment identity's read access, and allow propagation before rerunning. The gate does not repair roles or require an existing Container App. |
-| Seed operation returns 403 | Verify the deployment principal's data roles and allow RBAC propagation; hooks retry bounded transient failures, then stop. |
+| Seed operation returns firewall 403 | Confirm the private endpoint is approved, its SQL DNS records are linked to the VNet, and the job runs in the private environment. Do not open Cosmos to the internet. |
+| Seed operation returns authorization 403 | Verify the job's managed-identity data roles and allow RBAC propagation; retries are bounded. |
+| Seed job fails or times out | Inspect the exact execution named in the hook output and its container logs. Image pull, private DNS, data seeding, and agent registration must all succeed before URL verification. |
 | Model deployment fails | Check current model/version/SKU availability and TPM quota in the region; adjust model parameters before retrying. |
 | ACR remote build fails | Review ACR task logs and protected feed access; do not substitute public package registries. |
 | Foundry provisioning fails | Check Foundry project permissions, model deployment and knowledge connection; do not treat fallback inference as successful agent registration. |
@@ -260,4 +287,7 @@ can be supplied until the resources and application have been deployed.
 - [GitHub Azure login with a service principal secret](https://learn.microsoft.com/azure/developer/github/connect-from-azure-secret)
 - [azd Azure CLI authentication](https://learn.microsoft.com/azure/developer/javascript/ai/langchain-agent-on-azure#authenticate-to-the-azure-cli-and-azure-developer-cli)
 - [Optional GitHub OIDC pipeline setup](https://learn.microsoft.com/azure/developer/azure-developer-cli/pipeline-github-actions)
+- [Cosmos Private Link and DNS](https://learn.microsoft.com/azure/cosmos-db/how-to-configure-private-endpoints)
+- [Container Apps networking](https://learn.microsoft.com/azure/container-apps/networking)
+- [Manual Container Apps jobs](https://learn.microsoft.com/azure/container-apps/jobs#manual-jobs)
 - [Role assignment listing without Graph queries](https://learn.microsoft.com/cli/azure/role/assignment#az-role-assignment-list)

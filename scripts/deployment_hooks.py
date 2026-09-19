@@ -2,10 +2,10 @@
 
 preprovision owns .azure/azd-hooks/.venv and its requirements fingerprint. pip uses
 an existing protected/CFS or Azure Artifacts configuration, otherwise the CFS feed.
-postprovision requires every REQUIRED_OUTPUTS value in the process environment.
-Only hook subprocesses pin DefaultAzureCredential to AzureDeveloperCliCredential,
-so an unrelated `az login` cannot shadow `azd auth login` (including azd CI OIDC).
-postdeploy checks the frontend, its entry asset, health, and scenario; it never
+postprovision validates outputs without accessing private data planes.
+postdeploy uses AzureDeveloperCliCredential to start and monitor one private seed
+job execution, restarts the application revision to clear cached local fallbacks,
+then checks the frontend, its entry asset, Azure health, and scenario. It never
 starts a model workflow. APP_URL takes precedence over SERVICE_APP_ENDPOINT_URL.
 """
 
@@ -24,8 +24,9 @@ import subprocess
 import sys
 import time
 from urllib.error import HTTPError, URLError
-from urllib.parse import urljoin, urlsplit
-from urllib.request import urlopen
+from urllib.parse import parse_qs, urljoin, urlsplit
+from urllib.request import HTTPRedirectHandler, Request, build_opener, urlopen
+from uuid import UUID
 
 ROOT = Path(__file__).resolve().parents[1]
 PROTECTED_FEED = "https://packagefeedproxy.microsoft.io/pypi/simple"
@@ -38,6 +39,9 @@ REQUIRED_OUTPUTS = (
     "KNOWLEDGE_CONTAINER", "FOUNDRY_AGENT_PREFIX",
 )
 TRANSIENT_STATUSES = {401, 403, 408, 429, 500, 502, 503, 504}
+ARM_ENDPOINT = "https://management.azure.com"
+ARM_API_VERSION = "2024-03-01"
+SEED_JOB_TIMEOUT = 1800
 
 DEPENDENCY_PROBE = r"""
 import importlib
@@ -190,17 +194,204 @@ def require_outputs() -> None:
 
 def postprovision() -> None:
     require_outputs()
+    deployment_resource_paths()
     if not venv_python(ROOT / ".azure" / "azd-hooks" / ".venv").is_file():
         raise RuntimeError("Deployment environment is missing; run the preprovision hook first.")
-    env = dict(os.environ)
-    env.update(
-        AZURE_TOKEN_CREDENTIALS="AzureDeveloperCliCredential",
-        GSDR_AZD_HOOK="1",
-        PYTHON_DOTENV_DISABLED="1",
+    print(
+        "Deployment outputs validated. Private data-plane seeding and agent provisioning "
+        "are deferred to the Container Apps seed job during postdeploy.",
+        flush=True,
     )
-    for script in ("seed.py", "provision_agents.py"):
-        print(f"Running {script} using the azd deployment identity.", flush=True)
-        run_native([sys.executable, str(ROOT / "scripts" / script)], env=env)
+
+
+def _resource_name(value, label: str, pattern: str, limit: int) -> str:
+    if not isinstance(value, str) or len(value) > limit or not re.fullmatch(pattern, value):
+        raise ValueError(f"{label} is missing or is not a valid resource identifier.")
+    return value
+
+
+def deployment_resource_paths() -> tuple[str, str]:
+    subscription = _resource_name(
+        os.getenv("AZURE_SUBSCRIPTION_ID"), "AZURE_SUBSCRIPTION_ID",
+        r"[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}", 36,
+    )
+    if UUID(subscription).int == 0:
+        raise ValueError("AZURE_SUBSCRIPTION_ID must be a nonzero GUID.")
+    group = _resource_name(
+        os.getenv("AZURE_RESOURCE_GROUP"), "AZURE_RESOURCE_GROUP",
+        r"[A-Za-z0-9_()\-][A-Za-z0-9_().\-]*", 90,
+    )
+    if group.endswith("."):
+        raise ValueError("AZURE_RESOURCE_GROUP cannot end with a period.")
+    names = [
+        _resource_name(os.getenv(key), key, r"[a-z][a-z0-9]*(?:-[a-z0-9]+)*", 32)
+        for key in ("AZURE_SEED_JOB_NAME", "AZURE_CONTAINER_APP_NAME")
+    ]
+    base = f"/subscriptions/{subscription}/resourceGroups/{group}/providers/Microsoft.App"
+    return f"{base}/jobs/{names[0]}", f"{base}/containerApps/{names[1]}"
+
+
+def _remaining(deadline: float) -> float:
+    remaining = deadline - time.monotonic()
+    if remaining <= 0:
+        raise TimeoutError("Private seed job deployment timed out.")
+    return remaining
+
+
+class _NoArmRedirects(HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        # Never forward an ARM bearer token to a redirect target.
+        return None
+
+
+class ArmClient:
+    def __init__(self, credential):
+        self.credential = credential
+        self.opener = build_opener(_NoArmRedirects())
+
+    def request(self, method: str, path: str, deadline: float):
+        _remaining(deadline)
+        try:
+            token = self.credential.get_token(ARM_ENDPOINT + "/.default")
+        except Exception:
+            raise RuntimeError("ARM authentication with the Azure Developer CLI identity failed.") from None
+        request = Request(
+            ARM_ENDPOINT + path, method=method,
+            headers={
+                "Authorization": "Bearer " + token.token,
+                "Accept": "application/json", "Content-Type": "application/json",
+            },
+        )
+        try:
+            with self.opener.open(request, timeout=min(30, _remaining(deadline))) as response:
+                status = response.status
+                location = response.headers.get("Location")
+                body = response.read(2_000_001)
+        except HTTPError as exc:
+            raise RuntimeError(f"ARM {method} request failed (HTTP {exc.code}).") from None
+        except (OSError, URLError, ValueError):
+            raise RuntimeError(f"ARM {method} request failed without a valid response.") from None
+        if status not in {200, 202}:
+            raise RuntimeError(f"ARM {method} returned unexpected HTTP {status}.")
+        if len(body) > 2_000_000:
+            raise RuntimeError("ARM response exceeds the size limit.")
+        try:
+            result = json.loads(body) if body.strip() else None
+        except (ValueError, UnicodeError):
+            raise RuntimeError("ARM returned malformed JSON.") from None
+        if body.strip() and not isinstance(result, dict):
+            raise RuntimeError("ARM response must be a JSON object.")
+        if isinstance(result, dict) and "error" in result:
+            raise RuntimeError("ARM returned an error response.")
+        return status, result, location
+
+
+def _api(path: str) -> str:
+    return path + "?api-version=" + ARM_API_VERSION
+
+
+def _operation_location(location, job_path: str) -> str:
+    if not isinstance(location, str):
+        raise RuntimeError("ARM job start did not return an operation Location.")
+    parsed = urlsplit(location)
+    subscription_path = job_path.split("/resourceGroups/", 1)[0]
+    allowed_paths = (
+        re.escape(job_path) + r"/[A-Za-z0-9/_-]+",
+        re.escape(subscription_path)
+        + r"/providers/Microsoft\.App/locations/[a-z0-9-]+/operation(?:Results|Statuses)/[A-Za-z0-9-]+",
+    )
+    if (
+        parsed.scheme != "https" or parsed.netloc != "management.azure.com"
+        or parsed.fragment or not any(re.fullmatch(pattern, parsed.path) for pattern in allowed_paths)
+        or any(part in {".", ".."} for part in parsed.path.split("/"))
+        or parse_qs(parsed.query) != {"api-version": [ARM_API_VERSION]}
+    ):
+        raise RuntimeError("ARM job start returned an unsafe operation Location.")
+    return parsed.path + "?" + parsed.query
+
+
+def _execution_name(body, job_path: str) -> str:
+    if not isinstance(body, dict):
+        raise RuntimeError("ARM job start did not return an execution object.")
+    name = _resource_name(body.get("name"), "Job execution name", r"[a-z0-9][a-z0-9-]*", 100)
+    if not name.startswith(job_path.rsplit("/", 1)[-1] + "-"):
+        raise RuntimeError("ARM returned an execution for a different seed job.")
+    expected_id = job_path + "/executions/" + name
+    if "id" in body and (
+        not isinstance(body["id"], str) or body["id"].lower() != expected_id.lower()
+    ):
+        raise RuntimeError("ARM returned a mismatched seed job execution ID.")
+    return name
+
+
+def run_private_seed_job(client: ArmClient, job_path: str, *, timeout: float = SEED_JOB_TIMEOUT,
+                         interval: float = 10) -> None:
+    if timeout <= 0 or interval <= 0:
+        raise ValueError("Seed job timeout and poll interval must be positive.")
+    deadline = time.monotonic() + timeout
+    status, body, location = client.request("POST", _api(job_path + "/start"), deadline)
+    # Start is an ARM LRO; only its returned result may select the new execution.
+    while status == 202 and not (isinstance(body, dict) and "name" in body):
+        operation = _operation_location(location, job_path)
+        time.sleep(min(interval, _remaining(deadline)))
+        status, body, next_location = client.request("GET", operation, deadline)
+        location = next_location or location
+    name = _execution_name(body, job_path)
+    execution_path = _api(job_path + "/executions/" + name)
+    print(f"Waiting for private seed job execution {name}.", flush=True)
+    while True:
+        _remaining(deadline)
+        status, execution, _ = client.request("GET", execution_path, deadline)
+        if status != 200 or _execution_name(execution, job_path) != name:
+            raise RuntimeError("ARM returned a different or incomplete seed job execution.")
+        properties = execution.get("properties")
+        state = properties.get("status") if isinstance(properties, dict) else None
+        if not isinstance(state, str) or state not in {
+            "Running", "Processing", "Stopped", "Degraded", "Failed", "Unknown", "Succeeded",
+        }:
+            raise RuntimeError("ARM returned a malformed seed job execution status.")
+        if state == "Succeeded":
+            print("Private seed job succeeded.", flush=True)
+            return
+        if state in {"Failed", "Stopped"}:
+            raise RuntimeError(f"Private seed job execution {name} {state}.")
+        time.sleep(min(interval, _remaining(deadline)))
+
+
+def restart_application(client: ArmClient, app_path: str, *, timeout: float = 300) -> None:
+    deadline = time.monotonic() + timeout
+    status, app, _ = client.request("GET", _api(app_path), deadline)
+    properties = app.get("properties") if isinstance(app, dict) else None
+    if status != 200 or not isinstance(properties, dict):
+        raise RuntimeError("ARM returned a malformed Container App response.")
+    revision = _resource_name(
+        properties.get("latestReadyRevisionName"), "latestReadyRevisionName",
+        r"[a-z0-9][a-z0-9-]*", 100,
+    )
+    if not revision.startswith(app_path.rsplit("/", 1)[-1] + "-"):
+        raise RuntimeError("ARM returned a ready revision for a different Container App.")
+    status, _, _ = client.request("POST", _api(app_path + f"/revisions/{revision}/restart"), deadline)
+    if status != 200:
+        raise RuntimeError("ARM did not confirm the Container App revision restart.")
+    print("Application revision restarted after seeding; checking Azure-backed readiness.", flush=True)
+
+
+def postdeploy() -> None:
+    url = os.getenv("APP_URL", "").strip() or os.getenv("SERVICE_APP_ENDPOINT_URL", "").strip()
+    if not url:
+        raise RuntimeError("Missing azd output: APP_URL or SERVICE_APP_ENDPOINT_URL.")
+    job_path, app_path = deployment_resource_paths()
+    from azure.identity import AzureDeveloperCliCredential
+
+    with AzureDeveloperCliCredential(
+        tenant_id=os.getenv("AZURE_TENANT_ID") or None, process_timeout=30,
+    ) as credential:
+        client = ArmClient(credential)
+        run_private_seed_job(client, job_path)
+        restart_application(client, app_path)
+    # Restart invalidates startup-cached Search fallback. Strict HTTP polling is
+    # the final readiness gate, not a successful ARM request or a previous run.
+    verify_application(url)
 
 
 def retry_azure(operation, label: str, *, attempts: int = 7, delay: float = 5):
@@ -368,10 +559,7 @@ def main(argv: list[str] | None = None) -> int:
         elif args.phase == "postprovision":
             postprovision()
         else:
-            url = os.getenv("APP_URL", "").strip() or os.getenv("SERVICE_APP_ENDPOINT_URL", "").strip()
-            if not url:
-                raise RuntimeError("Missing azd output: APP_URL or SERVICE_APP_ENDPOINT_URL.")
-            verify_application(url)
+            postdeploy()
         return 0
     except Exception as exc:
         print(f"{args.phase} failed: {exc}", file=sys.stderr)

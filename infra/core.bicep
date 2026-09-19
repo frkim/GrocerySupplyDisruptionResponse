@@ -185,8 +185,8 @@ resource cosmos 'Microsoft.DocumentDB/databaseAccounts@2024-05-15' = {
     disableLocalAuth: true
     enableFreeTier: false
     capabilities: []
-    publicNetworkAccess: 'Enabled'
-    networkAclBypass: 'AzureServices'
+    publicNetworkAccess: 'Disabled'
+    networkAclBypass: 'None'
     isVirtualNetworkFilterEnabled: false
     consistencyPolicy: {
       defaultConsistencyLevel: 'Session'
@@ -339,11 +339,113 @@ resource acr 'Microsoft.ContainerRegistry/registries@2023-07-01' = {
   }
 }
 
-resource containerAppEnvironment 'Microsoft.App/managedEnvironments@2024-03-01' = {
-  name: '${namePrefix}-env-${suffix}'
+resource virtualNetwork 'Microsoft.Network/virtualNetworks@2024-05-01' = {
+  name: '${namePrefix}-vnet-${suffix}'
   location: location
   tags: tags
   properties: {
+    addressSpace: {
+      addressPrefixes: [
+        '10.42.0.0/16'
+      ]
+    }
+    subnets: [
+      {
+        name: 'container-apps'
+        properties: {
+          addressPrefix: '10.42.0.0/23'
+          delegations: [
+            {
+              name: 'container-apps'
+              properties: {
+                serviceName: 'Microsoft.App/environments'
+              }
+            }
+          ]
+        }
+      }
+      {
+        name: 'private-endpoints'
+        properties: {
+          addressPrefix: '10.42.2.0/24'
+          privateEndpointNetworkPolicies: 'Disabled'
+        }
+      }
+    ]
+  }
+}
+
+resource cosmosPrivateDns 'Microsoft.Network/privateDnsZones@2020-06-01' = {
+  name: 'privatelink.documents.azure.com'
+  location: 'global'
+  tags: tags
+}
+
+resource cosmosDnsLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = {
+  parent: cosmosPrivateDns
+  name: '${namePrefix}-cosmos-vnet'
+  location: 'global'
+  properties: {
+    registrationEnabled: false
+    virtualNetwork: {
+      id: virtualNetwork.id
+    }
+  }
+}
+
+resource cosmosPrivateEndpoint 'Microsoft.Network/privateEndpoints@2024-05-01' = {
+  name: '${namePrefix}-cosmos-pe-${suffix}'
+  location: location
+  tags: tags
+  properties: {
+    subnet: {
+      id: virtualNetwork.properties.subnets[1].id
+    }
+    privateLinkServiceConnections: [
+      {
+        name: 'cosmos-sql'
+        properties: {
+          privateLinkServiceId: cosmos.id
+          groupIds: [
+            'Sql'
+          ]
+        }
+      }
+    ]
+  }
+}
+
+resource cosmosPrivateDnsGroup 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2024-05-01' = {
+  parent: cosmosPrivateEndpoint
+  name: 'default'
+  properties: {
+    privateDnsZoneConfigs: [
+      {
+        name: 'cosmos-sql'
+        properties: {
+          privateDnsZoneId: cosmosPrivateDns.id
+        }
+      }
+    ]
+  }
+}
+
+// VNet integration is immutable; retain the original non-VNet environment.
+resource containerAppEnvironment 'Microsoft.App/managedEnvironments@2024-03-01' = {
+  name: '${namePrefix}-env-private-${suffix}'
+  location: location
+  tags: tags
+  properties: {
+    vnetConfiguration: {
+      infrastructureSubnetId: virtualNetwork.properties.subnets[0].id
+      internal: false
+    }
+    workloadProfiles: [
+      {
+        name: 'Consumption'
+        workloadProfileType: 'Consumption'
+      }
+    ]
     appLogsConfiguration: {
       destination: 'log-analytics'
       logAnalyticsConfiguration: {
@@ -352,6 +454,10 @@ resource containerAppEnvironment 'Microsoft.App/managedEnvironments@2024-03-01' 
       }
     }
   }
+  dependsOn: [
+    cosmosDnsLink
+    cosmosPrivateDnsGroup
+  ]
 }
 
 // ---------------------------------------------------------------------------

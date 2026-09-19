@@ -22,6 +22,13 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from scripts import deployment_hooks as hooks, seed  # noqa: E402
 
+RESOURCE_OUTPUTS = {
+    "AZURE_SUBSCRIPTION_ID": "11111111-2222-3333-4444-555555555555",
+    "AZURE_RESOURCE_GROUP": "rg-test",
+    "AZURE_SEED_JOB_NAME": "gsdr-app-seed",
+    "AZURE_CONTAINER_APP_NAME": "gsdr-app",
+}
+
 
 class ServiceError(Exception):
     def __init__(self, status_code):
@@ -110,29 +117,27 @@ class ConfigurationTests(QuietTest):
             self.assertEqual(hooks.main(["--phase", "postprovision"]), 1)
         native.assert_not_called()
 
-    def test_postprovision_uses_azd_identity_and_propagates_native_error(self):
+    def test_postprovision_defers_private_data_planes_without_running_commands(self):
         original_credential = os.getenv("AZURE_TOKEN_CREDENTIALS")
-        outputs = {key: "configured" for key in hooks.REQUIRED_OUTPUTS}
+        outputs = {**{key: "configured" for key in hooks.REQUIRED_OUTPUTS}, **RESOURCE_OUTPUTS}
         with patch.dict(os.environ, outputs, clear=True), patch.object(Path, "is_file", return_value=True):
-            with patch.object(hooks, "run_native") as native:
-                native.side_effect = [None, subprocess.CalledProcessError(8, ["provision_agents.py"])]
-                self.assertEqual(hooks.main(["--phase", "postprovision"]), 1)
-                self.assertEqual(native.call_count, 2)
-                for call in native.call_args_list:
-                    self.assertEqual(call.kwargs["env"]["AZURE_TOKEN_CREDENTIALS"], "AzureDeveloperCliCredential")
-                    self.assertEqual(call.kwargs["env"]["COSMOS_ENDPOINT"], "configured")
+            with patch.object(hooks, "run_native") as native, patch.object(hooks, "ArmClient") as arm:
+                self.assertEqual(hooks.main(["--phase", "postprovision"]), 0)
+                native.assert_not_called()
+                arm.assert_not_called()
+                self.assertIn("deferred to the Container Apps seed job", sys.stdout.getvalue())
         self.assertEqual(os.getenv("AZURE_TOKEN_CREDENTIALS"), original_credential)
 
-    def test_seed_failure_stops_before_agent_provisioning(self):
+    def test_postprovision_requires_private_job_resource_outputs(self):
         outputs = {key: "configured" for key in hooks.REQUIRED_OUTPUTS}
-        with patch.dict(os.environ, outputs, clear=True), patch.object(Path, "is_file", return_value=True):
-            with patch.object(hooks, "run_native", side_effect=subprocess.CalledProcessError(5, ["seed.py"])) as native:
-                with self.assertRaises(subprocess.CalledProcessError):
-                    hooks.postprovision()
-                self.assertEqual(native.call_count, 1)
+        with patch.dict(os.environ, outputs, clear=True), patch.object(hooks, "run_native") as native:
+            with self.assertRaisesRegex(ValueError, "AZURE_SUBSCRIPTION_ID"):
+                hooks.postprovision()
+            native.assert_not_called()
 
     def test_missing_environment_fails_explicitly(self):
-        with patch.dict(os.environ, {key: "ok" for key in hooks.REQUIRED_OUTPUTS}, clear=True):
+        outputs = {**{key: "ok" for key in hooks.REQUIRED_OUTPUTS}, **RESOURCE_OUTPUTS}
+        with patch.dict(os.environ, outputs, clear=True):
             with patch.object(Path, "is_file", return_value=False):
                 with self.assertRaisesRegex(RuntimeError, "preprovision"):
                     hooks.postprovision()
@@ -465,7 +470,14 @@ class SmokeTests(QuietTest):
         with patch.dict(os.environ, {}, clear=True):
             self.assertEqual(hooks.main(["--phase", "postdeploy"]), 1)
         self.open.side_effect = self.responses()
-        with patch.dict(os.environ, {"SERVICE_APP_ENDPOINT_URL": "https://app.example"}, clear=True):
+        with (
+            patch.dict(os.environ, {**RESOURCE_OUTPUTS, "SERVICE_APP_ENDPOINT_URL": "https://app.example"}, clear=True),
+            patch.dict(sys.modules, {
+                "azure.identity": module("azure.identity", AzureDeveloperCliCredential=MagicMock()),
+            }),
+            patch.object(hooks, "run_private_seed_job"),
+            patch.object(hooks, "restart_application"),
+        ):
             self.assertEqual(hooks.main(["--phase", "postdeploy"]), 0)
 
 

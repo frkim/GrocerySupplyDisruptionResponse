@@ -21,7 +21,9 @@ One image. A multi-stage Dockerfile builds the frontend, then copies the static 
 ## Build and deploy sequence
 
 Use `azd up` with `azure.yaml`; ACR remote build avoids a local Docker dependency.
-Preserve the postprovision seeding/agent hooks and postdeploy verification. Do not
+Preserve private Cosmos connectivity and the postdeploy managed-identity seed job,
+app restart, and verification gates. Do not seed Cosmos from a public runner or
+open its firewall. Do not
 introduce another independent build/deployment path or reset the deployed image
 during infrastructure-only provisioning.
 

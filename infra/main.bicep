@@ -78,6 +78,7 @@ output AZURE_CONTAINER_REGISTRY_ENDPOINT string = core.outputs.acrLoginServer
 output AZURE_CONTAINER_REGISTRY_NAME string = core.outputs.acrName
 output AZURE_CONTAINER_APPS_ENVIRONMENT_ID string = core.outputs.containerAppEnvironmentId
 output AZURE_CONTAINER_APP_NAME string = appName
+output AZURE_SEED_JOB_NAME string = '${appName}-seed'
 output AZURE_AI_PROJECT_ENDPOINT string = core.outputs.aiProjectEndpoint
 output AZURE_OPENAI_ENDPOINT string = core.outputs.openAiEndpoint
 output MODEL_DEPLOYMENT_NAME string = core.outputs.modelDeploymentName

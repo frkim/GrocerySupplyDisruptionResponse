@@ -71,6 +71,45 @@ class DeploymentContractTests(unittest.TestCase):
         self.assertNotIn("bb766161", values)
         self.assertNotIn("6d84d14b", values)
 
+    def test_cosmos_is_private_without_trusted_service_or_key_bypass(self):
+        core = (ROOT / "infra/core.bicep").read_text(encoding="utf-8")
+        cosmos = core.split("resource cosmos '", 1)[1].split("// Shared database", 1)[0]
+        for setting in ("publicNetworkAccess: 'Disabled'", "networkAclBypass: 'None'",
+                        "disableLocalAuth: true"):
+            self.assertIn(setting, cosmos)
+        self.assertNotIn("networkAclBypass: 'AzureServices'", core)
+        self.assertIn("name: 'privatelink.documents.azure.com'", core)
+        self.assertIn("privateLinkServiceId: cosmos.id", core)
+        self.assertIn("'Sql'", core)
+        self.assertIn("privateDnsZoneId: cosmosPrivateDns.id", core)
+        self.assertIn("id: virtualNetwork.id", core)
+
+    def test_private_endpoint_and_consumption_environment_use_separate_subnets(self):
+        core = (ROOT / "infra/core.bicep").read_text(encoding="utf-8")
+        self.assertIn("serviceName: 'Microsoft.App/environments'", core)
+        self.assertIn("name: '${namePrefix}-env-private-${suffix}'", core)
+        self.assertIn("infrastructureSubnetId: virtualNetwork.properties.subnets[0].id", core)
+        self.assertIn("id: virtualNetwork.properties.subnets[1].id", core)
+        self.assertIn("privateEndpointNetworkPolicies: 'Disabled'", core)
+        self.assertIn("workloadProfileType: 'Consumption'", core)
+        self.assertIn("internal: false", core)
+
+    def test_private_seed_job_uses_the_real_image_and_scoped_managed_identity(self):
+        app = (ROOT / "infra/app.bicep").read_text(encoding="utf-8")
+        job = app.split("resource seedJob ", 1)[1].split("output appUrl", 1)[0]
+        for setting in ("name: '${appName}-seed'", "image: containerImage",
+                        "environmentId: containerAppEnvironmentId", "'${identityId}': {}",
+                        "identity: identityId", "triggerType: 'Manual'", "replicaRetryLimit: 0",
+                        "replicaTimeout: 1800", "parallelism: 1", "'scripts.run_seed_job'"):
+            self.assertIn(setting, job)
+        self.assertNotIn("azd-service-name", job)
+        self.assertEqual(app.count("env: serviceEnvironment"), 2)
+        self.assertIn("value: 'ManagedIdentityCredential'", app)
+        self.assertNotIn("name: 'PROVISION_FOUNDRY_AGENTS'", app)
+        main = (ROOT / "infra/main.bicep").read_text(encoding="utf-8")
+        self.assertIn("output AZURE_SEED_JOB_NAME string = '${appName}-seed'", main)
+        self.assertIn("output AZURE_SEED_JOB_NAME string = seedJob.name", app)
+
 
 @unittest.skipUnless(PWSH, "PowerShell 7 is required for script execution tests")
 class SetupScriptTests(unittest.TestCase):

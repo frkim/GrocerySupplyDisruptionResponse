@@ -65,6 +65,8 @@ Every SSE frame is emitted as `data: <json>\n\n`. The event `type` values are `r
 | Service | Use |
 | --- | --- |
 | Azure Container Apps | Hosts the single FastAPI container that serves API and built UI. |
+| Container Apps manual job | Seeds data and registers agents inside the app's VNet using the same image and managed identity. |
+| Virtual network, Private Link, private DNS | Connect the app and seed job to Cosmos without enabling its public endpoint. |
 | Azure Container Registry | Stores the `grocery-disruption` container image. |
 | User-assigned managed identity | Gives the app least-privilege access without application secrets. |
 | Microsoft Foundry | Stores and invokes Foundry-hosted prompt agents with the `gsdr` prefix. |
@@ -82,6 +84,14 @@ Every Azure dependency is optional at process startup. If Cosmos DB is not confi
 
 Application code authenticates to Azure services through `DefaultAzureCredential`. In Azure, `AZURE_CLIENT_ID` selects the user-assigned managed identity. No service keys are read by the application or committed to the repository. The deployment assigns only the roles needed for ACR pull, Foundry/Azure OpenAI use, Search data and service access, Cosmos data access, Storage blob data access, and telemetry export.
 
+The deployed app and seed job pin the credential chain to managed identity.
+Cosmos public access and trusted-service bypass are disabled. Both containers use
+the Cosmos SQL private endpoint and private DNS inside a VNet-integrated
+Consumption environment. GitHub starts the seed job through ARM and waits for its
+specific execution; no private GitHub runner or public database allowlist is needed.
+Only after the job succeeds does deployment restart the app to clear startup
+fallback caches and verify that Cosmos and Azure AI Search are actually selected.
+
 The public API should be protected before production use. Recommended hardening includes Microsoft Entra ID authentication at ingress, narrow CORS origins, role validation on `POST /api/runs/{run_id}/decision`, option membership validation, private networking where required, and content-recording controls for traces.
 
 ## Identity and RBAC design
@@ -90,9 +100,8 @@ The public API should be protected before production use. Recommended hardening 
 | --- | --- | --- |
 | Container App user-assigned identity | ACR | Pull the `grocery-disruption` image. |
 | Container App user-assigned identity | Foundry and Azure OpenAI | Invoke model deployments and hosted agents. |
-| Container App user-assigned identity | Cosmos DB | Read seeded domain datasets. |
+| App and seed-job user-assigned identity | Cosmos DB | Seed and read domain datasets through the private endpoint. |
 | Container App user-assigned identity | Azure AI Search | Query and update the knowledge index where seeding uses the app identity. |
 | Container App user-assigned identity | Storage | Read or write knowledge blobs when the storage-backed path is used. |
 | Foundry project identity | Azure AI Search | Read the knowledge index for native hosted-agent grounding. |
 | GitHub workflow identity or service principal | Resource group | Build images and deploy Bicep from workflows. |
-

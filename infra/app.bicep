@@ -62,6 +62,85 @@ param storageBlobEndpoint string
 @description('Application Insights connection string.')
 param appInsightsConnectionString string
 
+var serviceEnvironment = [
+  {
+    name: 'AZURE_CLIENT_ID'
+    value: identityClientId
+  }
+  {
+    name: 'AZURE_TOKEN_CREDENTIALS'
+    value: 'ManagedIdentityCredential'
+  }
+  {
+    name: 'AZURE_AI_PROJECT_ENDPOINT'
+    value: aiProjectEndpoint
+  }
+  {
+    name: 'AZURE_OPENAI_ENDPOINT'
+    value: openAiEndpoint
+  }
+  {
+    name: 'MODEL_DEPLOYMENT_NAME'
+    value: modelDeploymentName
+  }
+  {
+    name: 'MODEL_MAX_CONCURRENCY'
+    value: '6'
+  }
+  {
+    name: 'EMBEDDING_DEPLOYMENT_NAME'
+    value: embeddingDeploymentName
+  }
+  {
+    name: 'COSMOS_ENDPOINT'
+    value: cosmosEndpoint
+  }
+  {
+    name: 'COSMOS_DATABASE'
+    value: cosmosDatabase
+  }
+  {
+    name: 'SEARCH_ENDPOINT'
+    value: searchEndpoint
+  }
+  {
+    name: 'SEARCH_INDEX_NAME'
+    value: searchIndexName
+  }
+  {
+    name: 'STORAGE_BLOB_ENDPOINT'
+    value: storageBlobEndpoint
+  }
+  {
+    name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
+    value: appInsightsConnectionString
+  }
+  {
+    name: 'SELF_BASE_URL'
+    value: 'http://127.0.0.1:8000'
+  }
+  {
+    name: 'ENABLE_DELIBERATION'
+    value: 'true'
+  }
+  {
+    name: 'ENABLE_FOUNDRY_HOSTED_AGENTS'
+    value: 'true'
+  }
+  {
+    name: 'KNOWLEDGE_CONTAINER'
+    value: knowledgeContainer
+  }
+  {
+    name: 'KNOWLEDGE_CONNECTION_NAME'
+    value: knowledgeConnectionName
+  }
+  {
+    name: 'FOUNDRY_AGENT_PREFIX'
+    value: foundryAgentPrefix
+  }
+]
+
 resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
   name: appName
   location: location
@@ -77,6 +156,7 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
   }
   properties: {
     environmentId: containerAppEnvironmentId
+    workloadProfileName: 'Consumption'
     configuration: {
       activeRevisionsMode: 'Single'
       ingress: {
@@ -137,81 +217,7 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
               failureThreshold: 3
             }
           ]
-          env: [
-            // Tells DefaultAzureCredential which user-assigned identity to use.
-            {
-              name: 'AZURE_CLIENT_ID'
-              value: identityClientId
-            }
-            {
-              name: 'AZURE_AI_PROJECT_ENDPOINT'
-              value: aiProjectEndpoint
-            }
-            {
-              name: 'AZURE_OPENAI_ENDPOINT'
-              value: openAiEndpoint
-            }
-            {
-              name: 'MODEL_DEPLOYMENT_NAME'
-              value: modelDeploymentName
-            }
-            {
-              name: 'MODEL_MAX_CONCURRENCY'
-              value: '6'
-            }
-            {
-              name: 'EMBEDDING_DEPLOYMENT_NAME'
-              value: embeddingDeploymentName
-            }
-            {
-              name: 'COSMOS_ENDPOINT'
-              value: cosmosEndpoint
-            }
-            {
-              name: 'COSMOS_DATABASE'
-              value: cosmosDatabase
-            }
-            {
-              name: 'SEARCH_ENDPOINT'
-              value: searchEndpoint
-            }
-            {
-              name: 'SEARCH_INDEX_NAME'
-              value: searchIndexName
-            }
-            {
-              name: 'STORAGE_BLOB_ENDPOINT'
-              value: storageBlobEndpoint
-            }
-            {
-              name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
-              value: appInsightsConnectionString
-            }
-            {
-              name: 'SELF_BASE_URL'
-              value: 'http://127.0.0.1:8000'
-            }
-            {
-              name: 'ENABLE_DELIBERATION'
-              value: 'true'
-            }
-            {
-              name: 'ENABLE_FOUNDRY_HOSTED_AGENTS'
-              value: 'true'
-            }
-            {
-              name: 'KNOWLEDGE_CONTAINER'
-              value: knowledgeContainer
-            }
-            {
-              name: 'KNOWLEDGE_CONNECTION_NAME'
-              value: knowledgeConnectionName
-            }
-            {
-              name: 'FOUNDRY_AGENT_PREFIX'
-              value: foundryAgentPrefix
-            }
-          ]
+          env: serviceEnvironment
         }
       ]
       scale: {
@@ -223,7 +229,59 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
   }
 }
 
+resource seedJob 'Microsoft.App/jobs@2024-03-01' = {
+  name: '${appName}-seed'
+  location: location
+  tags: {
+    'azd-env-name': environmentName
+  }
+  identity: {
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${identityId}': {}
+    }
+  }
+  properties: {
+    environmentId: containerAppEnvironmentId
+    workloadProfileName: 'Consumption'
+    configuration: {
+      triggerType: 'Manual'
+      replicaTimeout: 1800
+      replicaRetryLimit: 0
+      manualTriggerConfig: {
+        replicaCompletionCount: 1
+        parallelism: 1
+      }
+      registries: [
+        {
+          server: acrLoginServer
+          identity: identityId
+        }
+      ]
+    }
+    template: {
+      containers: [
+        {
+          name: 'seed'
+          image: containerImage
+          command: [
+            'python'
+            '-m'
+            'scripts.run_seed_job'
+          ]
+          env: serviceEnvironment
+          resources: {
+            cpu: json('1.0')
+            memory: '2Gi'
+          }
+        }
+      ]
+    }
+  }
+}
+
 output appUrl string = 'https://${containerApp.properties.configuration.ingress.fqdn}'
 output appName string = containerApp.name
 output APP_URL string = 'https://${containerApp.properties.configuration.ingress.fqdn}'
 output AZURE_CONTAINER_APP_NAME string = containerApp.name
+output AZURE_SEED_JOB_NAME string = seedJob.name
