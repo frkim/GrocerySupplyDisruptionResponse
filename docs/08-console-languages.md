@@ -76,6 +76,19 @@ output surface. Output headings, controls, badges, code text, and placeholders
 use colors that remain readable on that surface. Input, errors, timing metrics,
 and tool activity remain visually distinct.
 
+Because the Output panel keeps a light surface in both themes, it re-declares
+the full colour token set locally, so no dark-theme colour can be inherited onto
+its white background.
+
+## Colour contrast
+
+Both themes target WCAG 2.1 AA: at least 4.5:1 for body text and at least 3:1
+for large text. The light theme uses deep, saturated foreground colours rather
+than pale ones, including on tinted status chips where the tint itself lightens
+the background. Component styles never hard-code a colour; every surface, line,
+text, status, and agent-graph colour comes from a token defined once per theme
+in `src/frontend/src/index.css`.
+
 ## Verification
 
 ```powershell

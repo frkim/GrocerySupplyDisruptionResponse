@@ -34,6 +34,41 @@
   --gate-soft: rgba(167, 139, 250, 0.16);
   --idle: #4b5468;
 
+  /* Semantic colours that used to be hard-coded per component */
+  --code: #b6d7e8;
+  --bad-text: #ffd9d9;
+  --on-accent: #04121c;
+  --on-gate: #100a24;
+  --accent-hi: #55c9fa;
+  --accent-hi-2: #16a9ec;
+  --gate-hi: #b79cff;
+  --gate-lo: #8b5cf6;
+  --gate-hi-2: #c6b0ff;
+  --gate-lo-2: #7c4ef3;
+  --btn-hover-bg: #232b3c;
+  --btn-hover-line: #3c4761;
+  --tint: rgba(255, 255, 255, 0.012);
+  --tint-strong: rgba(255, 255, 255, 0.025);
+
+  /* Agent graph (SVG) */
+  --graph-edge: #232b3d;
+  --graph-node-bg: #161c29;
+  --graph-node-line: #2a3244;
+  --graph-node-text: #93a0b6;
+  --graph-node-meta: #59657c;
+  --graph-card-bg: rgba(18, 23, 34, 0.85);
+  --graph-card-line: #262e40;
+  --graph-running-text: #f6e6bd;
+  --graph-running-meta: #cbab6d;
+  --graph-ok-text: #dcf4e9;
+  --graph-bad-text: #fbdcdc;
+  --graph-gate-text: #e6ddff;
+  --graph-idle-bg: rgba(18, 23, 34, 0.6);
+  --graph-idle-line: #3a4358;
+  --graph-idle-text: #6d7789;
+  --graph-idle-meta: #46506a;
+  --graph-active-text: #f5f7fb;
+
   --radius-sm: 6px;
   --radius: 10px;
   --radius-lg: 14px;
@@ -57,28 +92,61 @@
   --surface-3: #e9edf5;
   --surface-inset: #f0f3f9;
 
-  --line: #d6dceb;
-  --line-strong: #bcc6db;
+  --line: #c3cbdd;
+  --line-strong: #97a3bd;
 
   --text-hi: #0f1729;
-  --text: #33405a;
-  --text-dim: #64708a;
-  --text-faint: #8b95a9;
+  --text: #2c3850;
+  --text-dim: #495568;
+  --text-faint: #5b6679;
 
-  --accent: #0284c7;
-  --accent-strong: #0369a1;
-  --accent-soft: rgba(2, 132, 199, 0.1);
-  --accent-line: rgba(2, 132, 199, 0.35);
+  --accent: #03628f;
+  --accent-strong: #024b6f;
+  --accent-soft: rgba(3, 98, 143, 0.1);
+  --accent-line: rgba(3, 98, 143, 0.45);
 
-  --ok: #059669;
-  --ok-soft: rgba(5, 150, 105, 0.12);
-  --warn: #b45309;
-  --warn-soft: rgba(180, 83, 9, 0.12);
-  --bad: #dc2626;
-  --bad-soft: rgba(220, 38, 38, 0.12);
-  --gate: #7c3aed;
-  --gate-soft: rgba(124, 58, 237, 0.12);
-  --idle: #9aa4b8;
+  --ok: #036c4e;
+  --ok-soft: rgba(3, 108, 78, 0.1);
+  --warn: #9a4200;
+  --warn-soft: rgba(154, 66, 0, 0.1);
+  --bad: #b91c1c;
+  --bad-soft: rgba(185, 28, 28, 0.1);
+  --gate: #6d28d9;
+  --gate-soft: rgba(109, 40, 217, 0.1);
+  --idle: #626d80;
+
+  --code: #0b4a63;
+  --bad-text: #8c1616;
+  --on-accent: #ffffff;
+  --on-gate: #ffffff;
+  --accent-hi: #0a76a8;
+  --accent-hi-2: #045a85;
+  --gate-hi: #7c3aed;
+  --gate-lo: #6d28d9;
+  --gate-hi-2: #6d28d9;
+  --gate-lo-2: #5b21b6;
+  --btn-hover-bg: #dde3f0;
+  --btn-hover-line: #97a3bd;
+  --tint: rgba(15, 23, 41, 0.025);
+  --tint-strong: rgba(15, 23, 41, 0.045);
+
+  --graph-edge: #aab4ca;
+  --graph-node-bg: #ffffff;
+  --graph-node-line: #b6c0d5;
+  --graph-node-text: #22304a;
+  --graph-node-meta: #4e5a72;
+  --graph-card-bg: rgba(255, 255, 255, 0.94);
+  --graph-card-line: #b6c0d5;
+  --graph-running-text: #7a3400;
+  --graph-running-meta: #8b4a06;
+  --graph-ok-text: #055c43;
+  --graph-bad-text: #9c1717;
+  --graph-gate-text: #5b21b6;
+  --graph-idle-bg: rgba(233, 237, 245, 0.85);
+  --graph-idle-line: #b0bace;
+  --graph-idle-text: #4e5a72;
+  --graph-idle-meta: #5f6b84;
+  --graph-active-text: #0f1729;
 
   --shadow-1: 0 1px 2px rgba(15, 23, 41, 0.08);
   --shadow-2: 0 8px 24px rgba(15, 23, 41, 0.12);
@@ -152,13 +220,13 @@ button:focus-visible {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #232b3b;
+  background: var(--line-strong);
   border-radius: 6px;
   border: 2px solid transparent;
   background-clip: content-box;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #303a4f;
+  background: var(--text-faint);
   background-clip: content-box;
 }
 
@@ -184,7 +252,7 @@ button:focus-visible {
   gap: 12px;
   padding: 12px 16px;
   border-bottom: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.012);
+  background: var(--tint);
 }
 
 .card__title {
@@ -256,8 +324,8 @@ button:focus-visible {
 }
 
 .btn:hover:not(:disabled) {
-  background: #232b3c;
-  border-color: #3c4761;
+  background: var(--btn-hover-bg);
+  border-color: var(--btn-hover-line);
 }
 
 .btn:disabled {
@@ -268,22 +336,22 @@ button:focus-visible {
 .btn--primary {
   background: linear-gradient(180deg, var(--accent), var(--accent-strong));
   border-color: transparent;
-  color: #04121c;
+  color: var(--on-accent);
 }
 
 .btn--primary:hover:not(:disabled) {
-  background: linear-gradient(180deg, #55c9fa, #16a9ec);
+  background: linear-gradient(180deg, var(--accent-hi), var(--accent-hi-2));
   border-color: transparent;
 }
 
 .btn--gate {
-  background: linear-gradient(180deg, #b79cff, #8b5cf6);
+  background: linear-gradient(180deg, var(--gate-hi), var(--gate-lo));
   border-color: transparent;
-  color: #100a24;
+  color: var(--on-gate);
 }
 
 .btn--gate:hover:not(:disabled) {
-  background: linear-gradient(180deg, #c6b0ff, #7c4ef3);
+  background: linear-gradient(180deg, var(--gate-hi-2), var(--gate-lo-2));
 }
 
 /* ---------------------------------------------------------------- */

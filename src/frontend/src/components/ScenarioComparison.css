@@ -25,7 +25,7 @@
 }
 
 .scen__card--recommended {
-  border-color: rgba(52, 211, 153, 0.5);
+  border-color: color-mix(in srgb, var(--ok) 50%, transparent);
   background: linear-gradient(180deg, rgba(52, 211, 153, 0.07), var(--surface-inset));
 }
 
@@ -141,7 +141,7 @@
 .scen__score-track {
   height: 5px;
   border-radius: 999px;
-  background: #1b2231;
+  background: var(--surface-3);
   overflow: hidden;
 }
 

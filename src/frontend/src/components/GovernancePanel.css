@@ -32,7 +32,7 @@
 }
 
 .gov__row:hover td {
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--tint);
 }
 
 .gov__num {
@@ -75,17 +75,17 @@
 }
 
 .gov__host--foundry {
-  border-color: rgba(56, 189, 248, 0.4);
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
   background: var(--accent-soft);
   color: var(--accent);
 }
 .gov__host--local {
-  border-color: rgba(52, 211, 153, 0.35);
+  border-color: color-mix(in srgb, var(--ok) 35%, transparent);
   background: var(--ok-soft);
   color: var(--ok);
 }
 .gov__host--a2a {
-  border-color: rgba(167, 139, 250, 0.4);
+  border-color: color-mix(in srgb, var(--gate) 40%, transparent);
   background: var(--gate-soft);
   color: var(--gate);
 }

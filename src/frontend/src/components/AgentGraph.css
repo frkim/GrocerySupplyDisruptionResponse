@@ -49,14 +49,14 @@
 
 .graph__edge {
   fill: none;
-  stroke: #232b3d;
+  stroke: var(--graph-edge);
   stroke-width: 1.5;
   transition: stroke 0.4s ease, stroke-width 0.4s ease, opacity 0.4s ease;
   opacity: 0.85;
 }
 
 .graph__edge--live {
-  stroke: rgba(56, 189, 248, 0.6);
+  stroke: var(--accent-line);
   stroke-width: 1.9;
   opacity: 1;
 }
@@ -89,14 +89,14 @@
 }
 
 .graph__node-box {
-  fill: #161c29;
-  stroke: #2a3244;
+  fill: var(--graph-node-bg);
+  stroke: var(--graph-node-line);
   stroke-width: 1.2;
   transition: fill 0.3s ease, stroke 0.3s ease;
 }
 
 .graph__node-label {
-  fill: #93a0b6;
+  fill: var(--graph-node-text);
   font-size: 12.5px;
   font-weight: 600;
   font-family: var(--font);
@@ -105,7 +105,7 @@
 }
 
 .graph__node-badge {
-  fill: #59657c;
+  fill: var(--graph-node-meta);
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.09em;
@@ -114,7 +114,7 @@
 }
 
 .graph__node-sub {
-  fill: #59657c;
+  fill: var(--graph-node-meta);
   font-size: 9.5px;
   font-family: var(--mono);
   letter-spacing: 0.02em;
@@ -157,22 +157,22 @@
 
 /* State: pending */
 .graph__node--pending .graph__node-box {
-  fill: rgba(18, 23, 34, 0.85);
-  stroke: #262e40;
+  fill: var(--graph-card-bg);
+  stroke: var(--graph-card-line);
 }
 
 /* State: running */
 .graph__node--running .graph__node-box {
-  fill: rgba(251, 191, 36, 0.09);
+  fill: color-mix(in srgb, var(--warn) 12%, var(--graph-node-bg));
   stroke: var(--warn);
   animation: graph-node-breathe 1.6s ease-in-out infinite;
 }
 .graph__node--running .graph__node-label {
-  fill: #f6e6bd;
+  fill: var(--graph-running-text);
 }
 .graph__node--running .graph__node-sub,
 .graph__node--running .graph__node-badge {
-  fill: #cbab6d;
+  fill: var(--graph-running-meta);
 }
 .graph__node--running .graph__node-state {
   fill: var(--warn);
@@ -193,11 +193,11 @@
 
 /* State: completed */
 .graph__node--completed .graph__node-box {
-  fill: rgba(52, 211, 153, 0.07);
-  stroke: rgba(52, 211, 153, 0.65);
+  fill: color-mix(in srgb, var(--ok) 10%, var(--graph-node-bg));
+  stroke: color-mix(in srgb, var(--ok) 65%, transparent);
 }
 .graph__node--completed .graph__node-label {
-  fill: #dcf4e9;
+  fill: var(--graph-ok-text);
 }
 .graph__node--completed .graph__node-state {
   fill: var(--ok);
@@ -205,11 +205,11 @@
 
 /* State: failed */
 .graph__node--failed .graph__node-box {
-  fill: rgba(248, 113, 113, 0.09);
+  fill: color-mix(in srgb, var(--bad) 12%, var(--graph-node-bg));
   stroke: var(--bad);
 }
 .graph__node--failed .graph__node-label {
-  fill: #fbdcdc;
+  fill: var(--graph-bad-text);
 }
 .graph__node--failed .graph__node-state {
   fill: var(--bad);
@@ -217,32 +217,32 @@
 
 /* State: skipped */
 .graph__node--skipped .graph__node-box {
-  fill: rgba(18, 23, 34, 0.6);
-  stroke: #3a4358;
+  fill: var(--graph-idle-bg);
+  stroke: var(--graph-idle-line);
   stroke-dasharray: 5 4;
 }
 .graph__node--skipped .graph__node-label {
-  fill: #6d7789;
+  fill: var(--graph-idle-text);
 }
 .graph__node--skipped .graph__node-state {
-  fill: #46506a;
+  fill: var(--graph-idle-meta);
 }
 
 :root[data-theme='light'] .graph__node-box,
 :root[data-theme='light'] .graph__node--pending .graph__node-box,
 :root[data-theme='light'] .graph__node--skipped .graph__node-box {
-  fill: #f5f7fb;
+  fill: var(--graph-active-text);
   stroke: var(--line-strong);
 }
 
 /* State: awaiting */
 .graph__node--awaiting .graph__node-box {
-  fill: rgba(167, 139, 250, 0.12);
+  fill: color-mix(in srgb, var(--gate) 14%, var(--graph-node-bg));
   stroke: var(--gate);
   animation: graph-node-breathe 1.1s ease-in-out infinite;
 }
 .graph__node--awaiting .graph__node-label {
-  fill: #e6ddff;
+  fill: var(--graph-gate-text);
 }
 .graph__node--awaiting .graph__node-state {
   fill: var(--gate);
@@ -269,7 +269,7 @@
   flex-wrap: wrap;
   gap: 8px 22px;
   padding: 10px 16px 12px;
-  background: rgba(255, 255, 255, 0.012);
+  background: var(--tint);
 }
 
 .graph__legend-group {

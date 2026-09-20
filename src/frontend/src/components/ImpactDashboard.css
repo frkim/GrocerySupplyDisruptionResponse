@@ -37,7 +37,7 @@
   opacity: 0.55;
 }
 .impact__card--empty::before {
-  background: #303a4f;
+  background: var(--line-strong);
 }
 
 .impact__label {
