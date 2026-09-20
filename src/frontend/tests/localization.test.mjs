@@ -277,3 +277,28 @@ test('a text the provider always rejects is reported without blocking the rest',
   assert.equal(store.error, 'Translation unavailable. Showing original text.');
   store.pause();
 });
+
+test('slow agent output translates over several concurrent requests', async () => {
+  let inFlight = 0;
+  let peak = 0;
+  const calls = [];
+  const store = new TranslationStore('fr', async (_, texts) => {
+    inFlight += 1;
+    peak = Math.max(peak, inFlight);
+    calls.push(texts);
+    await pause(40);
+    inFlight -= 1;
+    return texts.map((text) => `fr:${text}`);
+  });
+  const sources = Array.from({ length: 120 }, (_, index) =>
+    `Execution detail narrative number ${index} describing the agent output in full. `.repeat(6));
+  sources.forEach((source) => store.text(source));
+  await settled(store);
+  assert.ok(peak > 1 && peak <= 3, `Expected bounded concurrency, saw ${peak}.`);
+  for (const texts of calls) {
+    assert.ok(texts.length === 1
+      || texts.reduce((total, text) => total + text.length, 0) <= 12000);
+  }
+  for (const source of sources) assert.equal(store.text(source), `fr:${source}`);
+  store.pause();
+});

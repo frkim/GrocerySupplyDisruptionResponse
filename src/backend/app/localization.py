@@ -2,7 +2,7 @@
 
 Requests: en/fr/de/es, 1–24 nonblank strings, 12,000 characters per string,
 40,000 characters total, and at most 512,000 encoded request bytes. Outputs:
-24,000 characters per string and 80,000 total. The 30-second deadline includes
+24,000 characters per string and 80,000 total. The 45-second deadline includes
 waiting for the existing chat engine's shared model concurrency gate.
 Masked model prompts (including their JSON envelope) are limited to 80,000
 characters. Unavailable or invalid catalogs emit content-free warnings and
@@ -38,7 +38,7 @@ MAX_MODEL_PROMPT_CHARS = 80_000
 MAX_OUTPUT_CHARS = 24_000
 MAX_OUTPUT_TOTAL_CHARS = 80_000
 MAX_MODEL_RESPONSE_CHARS = 512_000
-TRANSLATION_TIMEOUT_SECONDS = 30
+TRANSLATION_TIMEOUT_SECONDS = 45
 CACHE_MAX_ENTRIES = 512
 CACHE_MAX_CHARS = 1_000_000
 

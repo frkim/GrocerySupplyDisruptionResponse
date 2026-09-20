@@ -13,10 +13,11 @@ const CATALOGS: Record<Language, Record<string, string>> = {
 };
 const MAX_TEXT = 12_000;
 const MAX_BATCH = 24;
-const MAX_BATCH_CHARS = 40_000;
+const MAX_BATCH_CHARS = 12_000;
 const CACHE_LIMIT = 2_000;
 const MAX_ATTEMPTS = 3;
 const MAX_CONSECUTIVE_FAILURES = 3;
+const MAX_CONCURRENCY = 3;
 const TRANSLATION_ERROR = 'Translation unavailable. Showing original text.';
 const APP_TITLE = 'Grocery Supply Disruption Response';
 let activeLanguage: Language = 'en';
@@ -113,7 +114,7 @@ export class TranslationStore {
   private attempts = new Map<string, number>();
   private consecutiveFailures = 0;
   private halted = false;
-  private controller: AbortController | null = null;
+  private controllers = new Set<AbortController>();
   private timer: ReturnType<typeof setTimeout> | undefined;
   private active = true;
 
@@ -243,8 +244,8 @@ export class TranslationStore {
     this.active = false;
     clearTimeout(this.timer);
     this.timer = undefined;
-    this.controller?.abort();
-    this.controller = null;
+    this.controllers.forEach((controller) => controller.abort());
+    this.controllers.clear();
     for (const source of this.inFlight) this.queue.add(source);
     this.inFlight.clear();
   };
@@ -255,7 +256,8 @@ export class TranslationStore {
   };
 
   private schedule(): void {
-    if (!this.active || this.timer !== undefined || this.controller || !this.queue.size) return;
+    if (!this.active || this.timer !== undefined
+      || this.controllers.size >= MAX_CONCURRENCY || !this.queue.size) return;
     // Scheduling avoids updating React subscribers during a component's render.
     this.timer = setTimeout(() => {
       this.timer = undefined;
@@ -276,7 +278,7 @@ export class TranslationStore {
   }
 
   private async flush(): Promise<void> {
-    if (!this.active || this.controller || !this.queue.size) return;
+    if (!this.active || this.controllers.size >= MAX_CONCURRENCY || !this.queue.size) return;
     const language = this.language;
     const first: string | undefined = this.queue.values().next().value;
     if (first === undefined) return;
@@ -285,7 +287,7 @@ export class TranslationStore {
     const batch: string[] = [];
     let size = 0;
     for (const source of this.queue) {
-      if (batch.length >= limit || size + source.length > MAX_BATCH_CHARS) break;
+      if (batch.length >= limit || (batch.length > 0 && size + source.length > MAX_BATCH_CHARS)) break;
       batch.push(source);
       size += source.length;
     }
@@ -294,12 +296,14 @@ export class TranslationStore {
       this.inFlight.add(source);
     });
     const controller = new AbortController();
-    this.controller = controller;
+    this.controllers.add(controller);
     const timeout = setTimeout(() => controller.abort(), 65_000);
     this.notify();
+    // Fill the remaining request slots so long agent output does not translate one batch at a time.
+    this.schedule();
     try {
       const result = await this.transport(language, batch, controller.signal);
-      if (this.controller !== controller || this.language !== language) return;
+      if (!this.controllers.has(controller) || this.language !== language) return;
       if (controller.signal.aborted) throw new Error('Translation request timed out.');
       const translations = Array.isArray(result) ? result : result.translations;
       const degraded = new Set(
@@ -326,7 +330,7 @@ export class TranslationStore {
         if (oldest !== undefined) this.cache.delete(oldest);
       }
     } catch (error) {
-      if (this.controller !== controller || this.language !== language) return;
+      if (!this.controllers.has(controller) || this.language !== language) return;
       this.consecutiveFailures += 1;
       batch.forEach((source) => this.deferFailure(source));
       if (this.consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
@@ -339,9 +343,8 @@ export class TranslationStore {
       console.warn(error instanceof Error ? error.message : 'Translation request failed.');
     } finally {
       clearTimeout(timeout);
-      if (this.controller === controller) {
-        this.controller = null;
-        this.inFlight.clear();
+      if (this.controllers.delete(controller)) {
+        batch.forEach((source) => this.inFlight.delete(source));
         this.notify();
         this.schedule();
       }

@@ -48,7 +48,11 @@ and response shapes and bounds batch sizes. Requests contain at most 24 strings,
 12,000 characters per string, and 40,000 characters in total.
 The encoded request body is capped at 512,000 bytes. After technical tokens are
 protected, the model prompt is limited to 80,000 characters; oversized expanded
-requests are rejected before inference. The translation deadline is 30 seconds.
+requests are rejected before inference. The translation deadline is 45 seconds.
+
+To keep long agent Execution details from translating one batch at a time, the
+browser sends up to three requests concurrently and caps each request at 12,000
+characters, so a slow batch no longer blocks the rest of the visible content.
 
 While translation is pending, the original content remains readable and the
 header shows the translation status. A text whose translation fails validation is

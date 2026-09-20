@@ -128,7 +128,7 @@ def _load_reference_signal() -> dict[str, Any]:
 async def translate(request: Request) -> TranslationResponse:
     """Display-only en/fr/de/es translation: 1–24 texts, 12k chars each, 40k total.
 
-    Maximum encoded body: 512,000 bytes. Translation deadline: 30 seconds,
+    Maximum encoded body: 512,000 bytes. Translation deadline: 45 seconds,
     including the shared model gate. Errors: 422 invalid request, 503 no model,
     502 invalid/provider response, 504 timeout. Originals and runs are never modified.
     """
