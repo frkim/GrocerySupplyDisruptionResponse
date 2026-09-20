@@ -168,11 +168,12 @@ test('language switches ignore stale responses and never mix cached languages', 
   store.pause();
 });
 
-test('failures are explicit, stop automatic requests and support deliberate retry', async () => {
+test('sustained failures are explicit, stop automatic requests and support deliberate retry', async () => {
   let calls = 0;
+  let healthy = false;
   const store = new TranslationStore('es', async (_, texts) => {
     calls += 1;
-    if (calls === 1) throw new Error('Simulated translation service outage.');
+    if (!healthy) throw new Error('Simulated translation service outage.');
     return texts.map((text) => `es:${text}`);
   });
   const source = 'A live report that is not in the catalog.';
@@ -180,14 +181,17 @@ test('failures are explicit, stop automatic requests and support deliberate retr
   await settled(store);
   assert.equal(store.error, 'Translation unavailable. Showing original text.');
   assert.equal(store.text(source), source);
+  const attempts = calls;
+  assert.ok(attempts >= 3, 'Transient failures must be retried before giving up.');
   store.text('A second report while the service is unavailable.');
   await pause();
-  assert.equal(calls, 1);
+  assert.equal(calls, attempts, 'A confirmed outage must stop automatic requests.');
+  healthy = true;
   store.retry();
   await settled(store);
   assert.equal(store.error, null);
   assert.equal(store.text(source), `es:${source}`);
-  assert.equal(calls, 2);
+  assert.equal(calls, attempts + 1);
   store.pause();
 });
 
@@ -218,5 +222,58 @@ test('StrictMode-style pause/resume does not strand queued translations', async 
   store.resume();
   await settled(store);
   assert.equal(store.text(source), `fr:${source}`);
+  store.pause();
+});
+
+test('one rejected batch never strands the texts queued behind it', async () => {
+  const calls = [];
+  const store = new TranslationStore('fr', async (_, texts) => {
+    calls.push(texts);
+    if (calls.length === 1) throw new Error('Simulated rejected batch.');
+    return texts.map((text) => `fr:${text}`);
+  });
+  const sources = Array.from({ length: 30 }, (_, index) => `Live mitigation scenario ${index} narrative.`);
+  sources.forEach((source) => store.text(source));
+  await settled(store);
+  for (const source of sources) {
+    assert.equal(store.text(source), `fr:${source}`, `${source} must not stay in English.`);
+  }
+  assert.equal(store.error, null);
+  store.pause();
+});
+
+test('texts the provider cannot translate are retried alone and never cached as English', async () => {
+  const calls = [];
+  let recovered = false;
+  const store = new TranslationStore('fr', async (_, texts) => {
+    calls.push(texts);
+    const translations = texts.map((text) => `fr:${text}`);
+    if (recovered) return { translations };
+    recovered = true;
+    return { translations: texts.map((text, index) => (index === 1 ? text : `fr:${text}`)),
+      untranslated: [1] };
+  });
+  const sources = ['A first live narrative.', 'A rejected live narrative.', 'A third live narrative.'];
+  sources.forEach((source) => store.text(source));
+  await settled(store);
+  assert.deepEqual(calls[0], sources);
+  assert.deepEqual(calls[1], ['A rejected live narrative.'], 'Rejected text must be isolated.');
+  for (const source of sources) assert.equal(store.text(source), `fr:${source}`);
+  assert.equal(store.error, null);
+  store.pause();
+});
+
+test('a text the provider always rejects is reported without blocking the rest', async () => {
+  const store = new TranslationStore('fr', async (_, texts) => ({
+    translations: texts.map((text) => (text.startsWith('Rejected') ? text : `fr:${text}`)),
+    untranslated: texts.flatMap((text, index) => (text.startsWith('Rejected') ? [index] : [])),
+  }));
+  store.text('Rejected live narrative with protected tokens.');
+  store.text('A translatable live narrative.');
+  await settled(store);
+  assert.equal(store.text('A translatable live narrative.'), 'fr:A translatable live narrative.');
+  assert.equal(store.text('Rejected live narrative with protected tokens.'),
+    'Rejected live narrative with protected tokens.');
+  assert.equal(store.error, 'Translation unavailable. Showing original text.');
   store.pause();
 });

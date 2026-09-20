@@ -6,7 +6,10 @@ Requests: en/fr/de/es, 1–24 nonblank strings, 12,000 characters per string,
 waiting for the existing chat engine's shared model concurrency gate.
 Masked model prompts (including their JSON envelope) are limited to 80,000
 characters. Unavailable or invalid catalogs emit content-free warnings and
-fall back to inference for missing entries.
+fall back to inference for missing entries. A text whose translation fails
+validation degrades to its English source and is reported in ``untranslated``
+so one item cannot discard an entire batch; the batch fails only when the
+provider tampers with protected tokens or no item is usable.
 """
 
 from __future__ import annotations
@@ -91,6 +94,8 @@ class TranslationRequest(BaseModel):
 
 class TranslationResponse(BaseModel):
     translations: list[str]
+    # Indices whose translation was unusable and degraded to the English source text.
+    untranslated: list[int] = Field(default_factory=list)
 
 
 def _unique_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
@@ -227,6 +232,7 @@ async def _translate(payload: TranslationRequest) -> TranslationResponse:
             resolved[source] = translated
 
     new_translations: dict[str, str] = {}
+    degraded: set[str] = set()
     if missing:
         nonce = secrets.token_hex(12)
         while any(f"__GSDR_{nonce}_" in source for source in missing):
@@ -255,6 +261,8 @@ async def _translate(payload: TranslationRequest) -> TranslationResponse:
             "Preserve __GSDR_...__ placeholders exactly once in their corresponding item; "
             "never move them to another item, alter, invent, expand, or interpret them. "
             "Preserve identifiers, URLs, numeric values, JSON structure and code; translate prose only. "
+            "Keep acronyms such as SKU, API, EUR and their plural suffixes exactly as written, "
+            "and never introduce an identifier, acronym or number that is absent from the source. "
             'Return exactly one JSON object with only the key "translations", containing a string '
             "array of the same length and in exactly the supplied order. Every string must be nonempty."
         )
@@ -278,21 +286,36 @@ async def _translate(payload: TranslationRequest) -> TranslationResponse:
                     not isinstance(translated, str)
                     or Counter(_PLACEHOLDERS.findall(translated)) != Counter(tokens.keys())
                 ):
+                    # Tampered protected tokens compromise every item of the batch.
                     raise ValueError("Invalid protected tokens.")
                 for placeholder, token in tokens.items():
                     translated = translated.replace(placeholder, token)
-                new_translations[source] = _validate_translation(source, translated)
+                try:
+                    new_translations[source] = _validate_translation(source, translated)
+                except (ValueError, TypeError, RecursionError):
+                    # A single unusable item degrades to its source instead of failing the batch.
+                    degraded.add(source)
         except (ValueError, TypeError, RecursionError):
             raise HTTPException(status_code=502, detail=_OUTPUT_ERROR) from None
+        if degraded and not new_translations:
+            raise HTTPException(status_code=502, detail=_OUTPUT_ERROR)
+        if degraded:
+            logger.warning(
+                "Display translation degraded %d of %d texts to source.", len(degraded), len(missing),
+            )
+        resolved.update({source: source for source in degraded})
         resolved.update(new_translations)
 
     ordered = [resolved[source] for source in payload.texts]
     if sum(map(len, ordered)) > MAX_OUTPUT_TOTAL_CHARS:
         raise HTTPException(status_code=502, detail=_OUTPUT_ERROR)
-    # Commit only after the entire batch (including duplicates) passes validation.
+    # Commit only translations that passed validation; degraded items stay retryable.
     for source, translated in new_translations.items():
         _cache.put(payload.language, source, translated)
-    return TranslationResponse(translations=ordered)
+    return TranslationResponse(
+        translations=ordered,
+        untranslated=[index for index, source in enumerate(payload.texts) if source in degraded],
+    )
 
 
 async def translate_display_texts(payload: TranslationRequest) -> TranslationResponse:

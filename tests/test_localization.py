@@ -47,7 +47,7 @@ class TranslationTests(unittest.IsolatedAsyncioTestCase):
         texts = ["  Hello\nWorld  ", "Stock SKU-003: 42", "Préférence"]
         response = await self.post(texts, "en")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), {"translations": texts})
+        self.assertEqual(response.json(), {"translations": texts, "untranslated": []})
         self.get_engine.assert_not_called()
         self.catalog.assert_not_called()
 
@@ -64,7 +64,10 @@ class TranslationTests(unittest.IsolatedAsyncioTestCase):
         self.catalog.return_value = {"Ready": "Prêt"}
         self.engine.complete.return_value = completion(["Retard", "Livraison"])
         response = await self.post(["Delay", "Ready", "Delivery", "Delay"])
-        self.assertEqual(response.json(), {"translations": ["Retard", "Prêt", "Livraison", "Retard"]})
+        self.assertEqual(
+            response.json(),
+            {"translations": ["Retard", "Prêt", "Livraison", "Retard"], "untranslated": []},
+        )
         kwargs = self.engine.complete.await_args.kwargs
         self.assertEqual(json.loads(kwargs["prompt"]), {"texts": ["Delay", "Delivery"]})
         self.assertTrue(kwargs["force_json"])
@@ -78,7 +81,7 @@ class TranslationTests(unittest.IsolatedAsyncioTestCase):
     async def test_catalog_only_needs_no_engine(self):
         self.catalog.return_value = {"Ready": "Prêt"}
         response = await self.post(["Ready", "Ready"])
-        self.assertEqual(response.json(), {"translations": ["Prêt", "Prêt"]})
+        self.assertEqual(response.json(), {"translations": ["Prêt", "Prêt"], "untranslated": []})
         self.get_engine.assert_not_called()
 
     async def test_unavailable_model_is_explicit_and_partial_catalog_is_not_returned(self):
@@ -258,8 +261,25 @@ class TranslationTests(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual(response.status_code, 502)
                 self.assertFalse(localization._cache.entries)
 
-    async def test_invalid_later_item_does_not_cache_earlier_success(self):
+    async def test_invalid_item_degrades_to_source_and_keeps_valid_siblings(self):
         self.engine.complete.return_value = completion(["Bonjour", ""])
+        response = await self.post(["Hello", "Ready"])
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"translations": ["Bonjour", "Ready"], "untranslated": [1]})
+        # The degraded text stays retryable while the valid sibling is cached.
+        self.assertEqual(list(localization._cache.entries), [("fr", "Hello")])
+
+    async def test_degraded_items_report_every_duplicate_position(self):
+        self.engine.complete.return_value = completion(["Bonjour", "Prêt 42"])
+        response = await self.post(["Hello", "Ready", "Hello", "Ready"])
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json(),
+            {"translations": ["Bonjour", "Ready", "Bonjour", "Ready"], "untranslated": [1, 3]},
+        )
+
+    async def test_batch_fails_when_every_item_is_invalid(self):
+        self.engine.complete.return_value = completion(["", " "])
         response = await self.post(["Hello", "Ready"])
         self.assertEqual(response.status_code, 502)
         self.assertFalse(localization._cache.entries)

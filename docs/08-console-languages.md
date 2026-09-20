@@ -51,10 +51,15 @@ protected, the model prompt is limited to 80,000 characters; oversized expanded
 requests are rejected before inference. The translation deadline is 30 seconds.
 
 While translation is pending, the original content remains readable and the
-header shows the translation status. If the model is unavailable or a translation
-fails, the header explicitly indicates that original text is being shown and
-offers a retry. Bundled interface/reference translations continue working in
-offline mode; arbitrary newly generated prose requires a configured model.
+header shows the translation status. A text whose translation fails validation is
+degraded to its English source and reported back, so the rest of the batch still
+displays translated; the browser then retries that text on its own, isolating the
+item the provider rejects instead of leaving the remaining content in English.
+A text is attempted at most three times, and three consecutive failed requests are
+treated as an outage: automatic requests stop, the header explicitly indicates that
+original text is being shown, and it offers a retry. Bundled interface/reference
+translations continue working in offline mode; arbitrary newly generated prose
+requires a configured model.
 
 ## Execution details
 

@@ -15,6 +15,8 @@ const MAX_TEXT = 12_000;
 const MAX_BATCH = 24;
 const MAX_BATCH_CHARS = 40_000;
 const CACHE_LIMIT = 2_000;
+const MAX_ATTEMPTS = 3;
+const MAX_CONSECUTIVE_FAILURES = 3;
 const TRANSLATION_ERROR = 'Translation unavailable. Showing original text.';
 const APP_TITLE = 'Grocery Supply Disruption Response';
 let activeLanguage: Language = 'en';
@@ -66,13 +68,15 @@ function fieldLabel(key: string): string {
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
 }
 
+export type TranslationResult = { translations: string[]; untranslated?: number[] };
+
 export type TranslationTransport = (
   language: Language, texts: string[], signal: AbortSignal,
-) => Promise<string[]>;
+) => Promise<string[] | TranslationResult>;
 
 async function translateBatch(
   language: Language, texts: string[], signal: AbortSignal,
-): Promise<string[]> {
+): Promise<TranslationResult> {
   const response = await fetch('/api/translate', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
@@ -88,7 +92,12 @@ async function translateBatch(
       typeof value === 'string' && value.trim().length > 0 && value.length <= MAX_TEXT * 4)) {
     throw new Error('Translation response has an invalid shape.');
   }
-  return body.translations;
+  const reported: unknown = 'untranslated' in body ? body.untranslated : undefined;
+  const untranslated = Array.isArray(reported)
+    ? reported.filter((index): index is number =>
+      Number.isInteger(index) && index >= 0 && index < texts.length)
+    : [];
+  return { translations: body.translations, untranslated };
 }
 
 /** Keeps canonical run data untouched; only the rendered presentation is translated. */
@@ -101,6 +110,9 @@ export class TranslationStore {
   private queue = new Set<string>();
   private failed = new Set<string>();
   private inFlight = new Set<string>();
+  private attempts = new Map<string, number>();
+  private consecutiveFailures = 0;
+  private halted = false;
   private controller: AbortController | null = null;
   private timer: ReturnType<typeof setTimeout> | undefined;
   private active = true;
@@ -131,6 +143,9 @@ export class TranslationStore {
     this.pause();
     this.queue.clear();
     this.failed.clear();
+    this.attempts.clear();
+    this.consecutiveFailures = 0;
+    this.halted = false;
     this.error = null;
     this.language = language;
     applyLanguage(language);
@@ -161,7 +176,8 @@ export class TranslationStore {
       this.cache.set(cacheKey, cached);
       return prefix + cached + suffix;
     }
-    if (this.error) {
+    if (this.halted) {
+      // A confirmed outage stops automatic requests until the reader retries.
       this.failed.add(value);
       return source;
     }
@@ -211,8 +227,13 @@ export class TranslationStore {
   };
 
   retry = (): void => {
-    for (const source of this.failed) this.queue.add(source);
+    for (const source of this.failed) {
+      this.attempts.delete(source);
+      this.queue.add(source);
+    }
     this.failed.clear();
+    this.consecutiveFailures = 0;
+    this.halted = false;
     this.error = null;
     this.notify();
     this.schedule();
@@ -242,13 +263,29 @@ export class TranslationStore {
     }, 30);
   }
 
+  /** Retries a text in progressively smaller batches so one bad item cannot strand the rest. */
+  private deferFailure(source: string): void {
+    const attempts = (this.attempts.get(source) ?? 0) + 1;
+    this.attempts.set(source, attempts);
+    if (attempts >= MAX_ATTEMPTS) {
+      this.failed.add(source);
+      this.error = TRANSLATION_ERROR;
+      return;
+    }
+    this.queue.add(source);
+  }
+
   private async flush(): Promise<void> {
     if (!this.active || this.controller || !this.queue.size) return;
     const language = this.language;
+    const first: string | undefined = this.queue.values().next().value;
+    if (first === undefined) return;
+    // A text that already failed is retried alone, isolating the item the provider rejects.
+    const limit = (this.attempts.get(first) ?? 0) > 0 ? 1 : MAX_BATCH;
     const batch: string[] = [];
     let size = 0;
     for (const source of this.queue) {
-      if (batch.length >= MAX_BATCH || size + source.length > MAX_BATCH_CHARS) break;
+      if (batch.length >= limit || size + source.length > MAX_BATCH_CHARS) break;
       batch.push(source);
       size += source.length;
     }
@@ -261,15 +298,28 @@ export class TranslationStore {
     const timeout = setTimeout(() => controller.abort(), 65_000);
     this.notify();
     try {
-      const translations = await this.transport(language, batch, controller.signal);
+      const result = await this.transport(language, batch, controller.signal);
       if (this.controller !== controller || this.language !== language) return;
       if (controller.signal.aborted) throw new Error('Translation request timed out.');
+      const translations = Array.isArray(result) ? result : result.translations;
+      const degraded = new Set(
+        (Array.isArray(result) ? [] : result.untranslated ?? [])
+          .map((index) => batch[index]).filter((source): source is string => source !== undefined),
+      );
       if (translations.length !== batch.length || translations.some((text) => !text.trim())) {
         throw new Error('Translation response has an invalid shape.');
       }
+      this.consecutiveFailures = 0;
       batch.forEach((source, index) => {
         const translation = translations[index];
-        if (translation !== undefined) this.cache.set(`${language}:${source}`, translation);
+        if (translation === undefined) return;
+        if (degraded.has(source)) {
+          // The provider could not translate this text; keep it retryable instead of caching English.
+          this.deferFailure(source);
+          return;
+        }
+        this.attempts.delete(source);
+        this.cache.set(`${language}:${source}`, translation);
       });
       while (this.cache.size > CACHE_LIMIT) {
         const oldest = this.cache.keys().next().value;
@@ -277,10 +327,15 @@ export class TranslationStore {
       }
     } catch (error) {
       if (this.controller !== controller || this.language !== language) return;
-      batch.forEach((source) => this.failed.add(source));
-      this.queue.forEach((source) => this.failed.add(source));
-      this.queue.clear();
-      this.error = TRANSLATION_ERROR;
+      this.consecutiveFailures += 1;
+      batch.forEach((source) => this.deferFailure(source));
+      if (this.consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
+        // Sustained failures mean the service is down, so stop retrying until the reader asks.
+        this.halted = true;
+        this.queue.forEach((source) => this.failed.add(source));
+        this.queue.clear();
+        this.error = TRANSLATION_ERROR;
+      }
       console.warn(error instanceof Error ? error.message : 'Translation request failed.');
     } finally {
       clearTimeout(timeout);
