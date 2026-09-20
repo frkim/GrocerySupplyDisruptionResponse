@@ -55,7 +55,7 @@
   --graph-node-bg: #161c29;
   --graph-node-line: #2a3244;
   --graph-node-text: #93a0b6;
-  --graph-node-meta: #59657c;
+  --graph-node-meta: #919cae;
   --graph-card-bg: rgba(18, 23, 34, 0.85);
   --graph-card-line: #262e40;
   --graph-running-text: #f6e6bd;
@@ -65,8 +65,8 @@
   --graph-gate-text: #e6ddff;
   --graph-idle-bg: rgba(18, 23, 34, 0.6);
   --graph-idle-line: #3a4358;
-  --graph-idle-text: #6d7789;
-  --graph-idle-meta: #46506a;
+  --graph-idle-text: #8792a4;
+  --graph-idle-meta: #7b8598;
   --graph-active-text: #f5f7fb;
 
   --radius-sm: 6px;
