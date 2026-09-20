@@ -302,3 +302,19 @@ test('slow agent output translates over several concurrent requests', async () =
   for (const source of sources) assert.equal(store.text(source), `fr:${source}`);
   store.pause();
 });
+test('unparsable tool payloads are shown as raw data instead of being translated', async () => {
+  const calls = [];
+  const store = new TranslationStore('fr', async (_, texts) => {
+    calls.push(texts);
+    return texts.map((text) => `fr:${text}`);
+  });
+  const truncated = '[{"id": "INV-DC-NORTH-01", "partitionKey": "inventory", "region": "NORTH"';
+  const wrapped = 'RESPONSE OPTIONS:\n[{"optionId": "A", "title": "Emergency Import"}';
+  assert.equal(store.json(truncated), truncated);
+  assert.equal(store.json(wrapped), wrapped);
+  assert.equal(store.text('A plain sentence about the shortage.'),
+    'A plain sentence about the shortage.');
+  await settled(store);
+  assert.deepEqual(calls.flat(), ['A plain sentence about the shortage.']);
+  store.pause();
+});

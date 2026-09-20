@@ -216,35 +216,52 @@ class TranslationTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("Ignore previous instructions", json.loads(kwargs["prompt"])["texts"][0])
 
     async def test_malformed_provider_responses_are_not_cached(self):
-        invalid = [
+        envelope_failures = [
             "", "not JSON", '```json\n{"translations":["Bonjour"]}\n```',
             'prefix {"translations":["Bonjour"]}', "[]", "null",
             '{"translations":["Bonjour"],"extra":true}',
             '{"translations":["Bonjour"],"translations":["Salut"]}',
             '{"translations":"Bonjour"}', '{"translations":[]}',
-            '{"translations":["Bonjour","Salut"]}', '{"translations":[1]}',
-            '{"translations":[null]}', '{"translations":[{}]}',
+            '{"translations":["Bonjour","Salut"]}',
+            " " * (localization.MAX_MODEL_RESPONSE_CHARS + 1),
+        ]
+        for raw in envelope_failures:
+            with self.subTest(envelope_length=len(raw)):
+                self.engine.complete.return_value = (raw, [], {})
+                response = await self.post(["Hello"])
+                self.assertEqual(response.status_code, 502)
+                self.assertEqual(len(localization._cache.entries), 0)
+        content_failures = [
+            '{"translations":[1]}', '{"translations":[null]}', '{"translations":[{}]}',
             '{"translations":[""]}', '{"translations":["  "]}',
             '{"translations":["\\ud800"]}',
             json.dumps({"translations": ["x" * 129]}),
             json.dumps({"translations": ["Bonjour 999"]}),
             json.dumps({"translations": ["__GSDR_abcd_0__"]}),
-            " " * (localization.MAX_MODEL_RESPONSE_CHARS + 1),
         ]
-        for raw in invalid:
-            with self.subTest(raw_length=len(raw)):
+        for raw in content_failures:
+            with self.subTest(content=raw[:40]):
                 self.engine.complete.return_value = (raw, [], {})
                 response = await self.post(["Hello"])
-                self.assertEqual(response.status_code, 502)
+                # Unusable content degrades to the source instead of showing provider output.
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(
+                    response.json(), {"translations": ["Hello"], "untranslated": [0]},
+                )
                 self.assertEqual(len(localization._cache.entries), 0)
         self.engine.complete.return_value = completion(["Bonjour"])
         response = await self.post(["Hello"])
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(self.engine.complete.await_count, len(invalid) + 1)
+        self.assertEqual(
+            self.engine.complete.await_count, len(envelope_failures) + len(content_failures) + 1,
+        )
 
-    async def test_removed_duplicated_and_cross_item_tokens_are_rejected(self):
+    async def test_removed_duplicated_and_cross_item_tokens_are_never_shown(self):
+        sources = ["Delay SKU-004", "Delivery SKU-005"]
         for operation in ["remove", "duplicate", "swap"]:
             with self.subTest(operation=operation):
+                localization._cache.entries.clear()
+
                 async def bad_translation(**kwargs):
                     texts = json.loads(kwargs["prompt"])["texts"]
                     token = localization._PLACEHOLDERS.search(texts[0]).group()
@@ -257,9 +274,13 @@ class TranslationTests(unittest.IsolatedAsyncioTestCase):
                     return completion(texts)
 
                 self.engine.complete.side_effect = bad_translation
-                response = await self.post(["Delay SKU-004", "Delivery SKU-005"])
-                self.assertEqual(response.status_code, 502)
-                self.assertFalse(localization._cache.entries)
+                response = await self.post(sources)
+                body = response.json()
+                self.assertEqual(response.status_code, 200)
+                # The tampered item falls back to its own source and is never cached.
+                self.assertEqual(body["translations"][0], sources[0])
+                self.assertIn(0, body["untranslated"])
+                self.assertNotIn(("fr", sources[0]), localization._cache.entries)
 
     async def test_invalid_item_degrades_to_source_and_keeps_valid_siblings(self):
         self.engine.complete.return_value = completion(["Bonjour", ""])
@@ -278,10 +299,13 @@ class TranslationTests(unittest.IsolatedAsyncioTestCase):
             {"translations": ["Bonjour", "Ready", "Bonjour", "Ready"], "untranslated": [1, 3]},
         )
 
-    async def test_batch_fails_when_every_item_is_invalid(self):
+    async def test_batch_degrades_when_every_item_is_invalid(self):
         self.engine.complete.return_value = completion(["", " "])
         response = await self.post(["Hello", "Ready"])
-        self.assertEqual(response.status_code, 502)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json(), {"translations": ["Hello", "Ready"], "untranslated": [0, 1]},
+        )
         self.assertFalse(localization._cache.entries)
 
     async def test_unexpected_tool_calls_are_rejected(self):
@@ -298,7 +322,9 @@ class TranslationTests(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(localization._cache.entries)
         self.engine.complete.return_value = completion(["y" * 24001])
         response = await self.post([source])
-        self.assertEqual(response.status_code, 502)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"translations": [source], "untranslated": [0]})
+        self.assertFalse(localization._cache.entries)
 
     async def test_provider_errors_do_not_leak_or_cache(self):
         secret = "sensitive submitted content and provider error"

@@ -19,6 +19,8 @@ const MAX_ATTEMPTS = 3;
 const MAX_CONSECUTIVE_FAILURES = 3;
 const MAX_CONCURRENCY = 3;
 const TRANSLATION_ERROR = 'Translation unavailable. Showing original text.';
+/** An embedded JSON object or array literal marks a payload as data rather than prose. */
+const STRUCTURED_PAYLOAD = /[[{]\s*"[^"\n]+"\s*:/;
 const APP_TITLE = 'Grocery Supply Disruption Response';
 let activeLanguage: Language = 'en';
 
@@ -206,7 +208,9 @@ export class TranslationStore {
       try {
         parsed = JSON.parse(value);
       } catch {
-        return this.text(value);
+        // Truncated or wrapped tool payloads are raw data, not prose: show them untouched
+        // instead of spending a translation request that can only mangle their identifiers.
+        return STRUCTURED_PAYLOAD.test(value) ? value : this.text(value);
       }
     }
     const localize = (item: unknown, key = ''): unknown => {

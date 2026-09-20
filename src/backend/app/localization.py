@@ -7,9 +7,9 @@ waiting for the existing chat engine's shared model concurrency gate.
 Masked model prompts (including their JSON envelope) are limited to 80,000
 characters. Unavailable or invalid catalogs emit content-free warnings and
 fall back to inference for missing entries. A text whose translation fails
-validation degrades to its English source and is reported in ``untranslated``
-so one item cannot discard an entire batch; the batch fails only when the
-provider tampers with protected tokens or no item is usable.
+validation, or whose protected tokens come back altered, degrades to its English
+source and is reported in ``untranslated`` so one item cannot discard an entire
+batch; the batch fails only when the response envelope itself is unusable.
 """
 
 from __future__ import annotations
@@ -286,8 +286,10 @@ async def _translate(payload: TranslationRequest) -> TranslationResponse:
                     not isinstance(translated, str)
                     or Counter(_PLACEHOLDERS.findall(translated)) != Counter(tokens.keys())
                 ):
-                    # Tampered protected tokens compromise every item of the batch.
-                    raise ValueError("Invalid protected tokens.")
+                    # Protected tokens that vanished, multiplied or moved between items make
+                    # this item untrustworthy; both sides of a swap fail their own check.
+                    degraded.add(source)
+                    continue
                 for placeholder, token in tokens.items():
                     translated = translated.replace(placeholder, token)
                 try:
@@ -297,8 +299,6 @@ async def _translate(payload: TranslationRequest) -> TranslationResponse:
                     degraded.add(source)
         except (ValueError, TypeError, RecursionError):
             raise HTTPException(status_code=502, detail=_OUTPUT_ERROR) from None
-        if degraded and not new_translations:
-            raise HTTPException(status_code=502, detail=_OUTPUT_ERROR)
         if degraded:
             logger.warning(
                 "Display translation degraded %d of %d texts to source.", len(degraded), len(missing),

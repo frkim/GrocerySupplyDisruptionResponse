@@ -55,10 +55,13 @@ browser sends up to three requests concurrently and caps each request at 12,000
 characters, so a slow batch no longer blocks the rest of the visible content.
 
 While translation is pending, the original content remains readable and the
-header shows the translation status. A text whose translation fails validation is
-degraded to its English source and reported back, so the rest of the batch still
-displays translated; the browser then retries that text on its own, isolating the
-item the provider rejects instead of leaving the remaining content in English.
+header shows the translation status. A text whose translation fails validation, or
+whose protected technical tokens come back altered, is degraded to its English
+source and reported back, so the rest of the batch still displays translated; the
+browser then retries that text on its own, isolating the item the provider rejects
+instead of leaving the remaining content in English. Provider output is never shown
+for a degraded text. Tool payloads that are raw data rather than prose, such as a
+truncated JSON result, are displayed unchanged and are never sent for translation.
 A text is attempted at most three times, and three consecutive failed requests are
 treated as an outage: automatic requests stop, the header explicitly indicates that
 original text is being shown, and it offers a retry. Bundled interface/reference
