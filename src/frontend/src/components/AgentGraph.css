@@ -228,13 +228,6 @@
   fill: var(--graph-idle-meta);
 }
 
-:root[data-theme='light'] .graph__node-box,
-:root[data-theme='light'] .graph__node--pending .graph__node-box,
-:root[data-theme='light'] .graph__node--skipped .graph__node-box {
-  fill: var(--graph-active-text);
-  stroke: var(--line-strong);
-}
-
 /* State: awaiting */
 .graph__node--awaiting .graph__node-box {
   fill: color-mix(in srgb, var(--gate) 14%, var(--graph-node-bg));
