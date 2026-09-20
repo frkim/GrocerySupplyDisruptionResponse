@@ -1,4 +1,5 @@
 import type { NodeResult } from '../types';
+import { useI18n } from '../lib/i18n';
 import {
   DASH,
   formatCurrencyEur,
@@ -22,6 +23,7 @@ interface MetricSpec {
 }
 
 export function ImpactDashboard({ results }: ImpactDashboardProps) {
+  const { t, locale } = useI18n();
   const demand = results['demand_forecast']?.structured;
   const inventory = results['network_inventory']?.structured;
   const financial = results['financial_impact']?.structured;
@@ -57,7 +59,7 @@ export function ImpactDashboard({ results }: ImpactDashboardProps) {
   const metrics: MetricSpec[] = [
     metric('revenue', 'Revenue at risk', 'financial_impact', 'money', formatCurrencyEur(revenueAtRisk), revenueAtRisk !== undefined),
     metric('cases', 'Cases short', 'network_inventory', 'ops', formatNumber(casesShort), casesShort !== undefined),
-    metric('availability', 'Shelf availability', 'store_impact', 'customer', formatPercent(shelfAvailability), shelfAvailability !== undefined),
+    metric('availability', 'Shelf availability', 'store_impact', 'customer', formatPercent(shelfAvailability, locale), shelfAvailability !== undefined),
     metric('stores', 'Stores affected', 'store_impact', 'customer', formatNumber(storesAffected), storesAffected !== undefined),
     metric('penalty', 'Penalty exposure', 'pricing_compliance', 'money', formatCurrencyEur(penaltyExposure), penaltyExposure !== undefined),
     metric('promotion', 'Promotion exposure', 'pricing_compliance', 'money', formatCurrencyEur(promotionExposure), promotionExposure !== undefined),
@@ -68,8 +70,8 @@ export function ImpactDashboard({ results }: ImpactDashboardProps) {
   return (
     <section className="card">
       <div className="card__head">
-        <h2 className="card__title">Business impact</h2>
-        {!anyData ? <span className="chip">awaiting assessment</span> : null}
+        <h2 className="card__title">{t('Business impact')}</h2>
+        {!anyData ? <span className="chip">{t('awaiting assessment')}</span> : null}
       </div>
       <div className="card__body impact">
         <div className="impact__grid">
@@ -78,7 +80,7 @@ export function ImpactDashboard({ results }: ImpactDashboardProps) {
               key={m.key}
               className={`impact__card impact__card--${m.tone} ${m.present ? '' : 'impact__card--empty'}`}
             >
-              <span className="impact__label">{m.label}</span>
+              <span className="impact__label">{t(m.label)}</span>
               <span className="impact__value">{m.value}</span>
               <span className="impact__hint mono">{m.hint}</span>
             </div>
@@ -86,7 +88,7 @@ export function ImpactDashboard({ results }: ImpactDashboardProps) {
         </div>
         {!anyData ? (
           <p className="impact__note">
-            Metrics populate as demand, inventory, finance, store and compliance agents report.
+            {t('Metrics populate as demand, inventory, finance, store and compliance agents report.')}
           </p>
         ) : null}
       </div>
@@ -124,9 +126,9 @@ function firstCount(sources: Array<unknown>, keys: string[]): number | undefined
   return undefined;
 }
 
-function formatPercent(value: number | undefined): string {
+function formatPercent(value: number | undefined, locale: string): string {
   if (value === undefined) return DASH;
-  return `${formatNumber(value)}%`;
+  return new Intl.NumberFormat(locale, { style: 'percent', maximumFractionDigits: 0 }).format(value / 100);
 }
 
 export default ImpactDashboard;

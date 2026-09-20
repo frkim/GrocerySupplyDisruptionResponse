@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import type { GraphNode, NodeGroup, NodeResult, NodeState, OrchestrationGraph } from '../types';
 import { HOSTING_LABEL, formatDurationMs } from '../lib/format';
+import { useI18n } from '../lib/i18n';
 import './AgentGraph.css';
 
 const NODE_W = 172;
@@ -56,16 +57,17 @@ export function AgentGraph({
   selectedId,
   onSelect,
 }: AgentGraphProps) {
+  const { t, text, locale } = useI18n();
   const { placed, byId, width, height } = useMemo(() => layout(graph.nodes), [graph.nodes]);
 
   if (placed.length === 0) {
     return (
       <section className="card graph">
         <div className="card__head">
-          <h2 className="card__title">Agent orchestration graph</h2>
+          <h2 className="card__title">{t('Agent orchestration graph')}</h2>
         </div>
         <div className="card__body">
-          <p className="empty">Topology unavailable.</p>
+          <p className="empty">{t('Topology unavailable.')}</p>
         </div>
       </section>
     );
@@ -76,15 +78,15 @@ export function AgentGraph({
   return (
     <section className="card graph">
       <div className="card__head">
-        <h2 className="card__title">Agent orchestration graph</h2>
+        <h2 className="card__title">{t('Agent orchestration graph')}</h2>
         <div className="graph__head-meta">
           {runningCount > 1 ? (
             <span className="graph__parallel">
               <span className="graph__parallel-dot" aria-hidden="true" />
-              {runningCount} agents running in parallel
+              {t('{count} agents running in parallel', { count: runningCount.toLocaleString(locale) })}
             </span>
           ) : null}
-          <span className="chip">{placed.length} nodes</span>
+          <span className="chip">{t('{count} nodes', { count: placed.length.toLocaleString(locale) })}</span>
         </div>
       </div>
 
@@ -93,7 +95,7 @@ export function AgentGraph({
           viewBox={`0 0 ${width} ${height}`}
           className="graph__svg"
           role="img"
-          aria-label="Multi-agent orchestration graph"
+          aria-label={t('Multi-agent orchestration graph')}
         >
           <defs>
             <marker
@@ -155,7 +157,8 @@ export function AgentGraph({
               const result = results[node.id];
               const selected = selectedId === node.id;
               const accent = groupColor(node.group);
-              const lines = wrapLabel(node.label || node.id);
+              const label = node.label ? text(node.label) : node.id;
+              const lines = wrapLabel(label);
 
               return (
                 <g
@@ -177,8 +180,9 @@ export function AgentGraph({
                   }}
                   tabIndex={0}
                   role="button"
-                  aria-label={`${node.label} — ${state}`}
+                  aria-label={`${label} — ${t(stateWord(state))}`}
                 >
+                  <title>{node.description ? `${label} — ${text(node.description)}` : label}</title>
                   <rect
                     className="graph__node-halo"
                     x={-3}
@@ -218,7 +222,7 @@ export function AgentGraph({
                   <text className="graph__node-sub" x={46} y={NODE_H - 12}>
                     {state === 'completed' && result?.durationMs
                       ? formatDurationMs(result.durationMs)
-                      : stateWord(state)}
+                      : t(stateWord(state))}
                   </text>
 
                   <circle
@@ -244,7 +248,7 @@ export function AgentGraph({
 
       <div className="graph__legend">
         <div className="graph__legend-group">
-          <span className="graph__legend-title">State</span>
+          <span className="graph__legend-title">{t('State')}</span>
           {(
             [
               ['pending', 'Pending'],
@@ -257,21 +261,21 @@ export function AgentGraph({
           ).map(([key, label]) => (
             <span key={key} className={`graph__legend-item graph__legend-item--${key}`}>
               <span className="graph__legend-dot" aria-hidden="true" />
-              {label}
+              {t(label)}
             </span>
           ))}
         </div>
         <div className="graph__legend-group">
-          <span className="graph__legend-title">Hosting</span>
+          <span className="graph__legend-title">{t('Hosting')}</span>
           {(['foundry', 'local', 'a2a', 'system'] as const).map((mode) => (
             <span key={mode} className="graph__legend-item">
               <span className="graph__legend-badge">{HOSTING_SHORT[mode]}</span>
-              {HOSTING_LABEL[mode]}
+              {t(HOSTING_LABEL[mode])}
             </span>
           ))}
         </div>
         <div className="graph__legend-group">
-          <span className="graph__legend-title">Stage</span>
+          <span className="graph__legend-title">{t('Stage')}</span>
           {Object.keys(GROUP_LABEL).map((group) => (
             <span key={group} className="graph__legend-item">
               <span
@@ -279,7 +283,7 @@ export function AgentGraph({
                 style={{ background: groupColor(group as NodeGroup) }}
                 aria-hidden="true"
               />
-              {GROUP_LABEL[group]}
+              {t(GROUP_LABEL[group] ?? group)}
             </span>
           ))}
         </div>

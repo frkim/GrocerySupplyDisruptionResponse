@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import type { GraphNode, NodeResult, NodeState, ToolCall } from '../types';
+import { useI18n } from '../lib/i18n';
 import {
   DASH,
   HOSTING_LABEL,
@@ -7,8 +8,6 @@ import {
   formatDurationMs,
   formatNumber,
   humanise,
-  prettyJson,
-  truncate,
 } from '../lib/format';
 import './AgentDetailPanel.css';
 
@@ -20,21 +19,18 @@ interface AgentDetailPanelProps {
 }
 
 export function AgentDetailPanel({ node, state, result, onClose }: AgentDetailPanelProps) {
+  const { t, text, json } = useI18n();
   const [structuredOpen, setStructuredOpen] = useState(true);
-
-  const structuredText = useMemo(
-    () => (result?.structured ? prettyJson(result.structured) : ''),
-    [result?.structured],
-  );
+  const structuredText = result?.structured ? json(result.structured) : '';
 
   if (!node) {
     return (
       <section className="card">
         <div className="card__head">
-          <h2 className="card__title">Agent detail</h2>
+          <h2 className="card__title">{t('Agent detail')}</h2>
         </div>
         <div className="card__body">
-          <p className="empty">Select a node in the graph to inspect its output.</p>
+          <p className="empty">{t('Select a node in the graph to inspect its output.')}</p>
         </div>
       </section>
     );
@@ -51,12 +47,12 @@ export function AgentDetailPanel({ node, state, result, onClose }: AgentDetailPa
       <section className="card detail detail-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="agent-detail-title">
       <div className="card__head">
         <div>
-          <h2 className="card__title" id="agent-detail-title">Execution details</h2>
-          <p className="detail__hint">Input, output, timing, and tool activity for this node.</p>
+          <h2 className="card__title" id="agent-detail-title">{t('Execution details')}</h2>
+          <p className="detail__hint">{t('Input, output, timing, and tool activity for this node.')}</p>
         </div>
         <div className="detail__head-actions">
-          <span className={`detail__state detail__state--${state}`}>{STATE_LABEL[state]}</span>
-          <button type="button" className="icon-button" onClick={onClose} aria-label="Close execution details" title="Close">
+          <span className={`detail__state detail__state--${state}`}>{t(STATE_LABEL[state])}</span>
+          <button type="button" className="icon-button" onClick={onClose} aria-label={t('Close execution details')} title={t('Close')}>
             ×
           </button>
         </div>
@@ -65,13 +61,14 @@ export function AgentDetailPanel({ node, state, result, onClose }: AgentDetailPa
       <div className="card__body detail__body">
         <div className="detail__id">
           <h3 className="detail__name">
-            {result?.agentName || node.label || humanise(node.id)}
+            {text(node.label || humanise(node.id))}
           </h3>
-          <p className="detail__desc">{node.description ?? 'No description supplied.'}</p>
+          <p className="detail__desc">{node.description ? text(node.description) : t('No description supplied.')}</p>
           <div className="detail__tags">
-            <span className="chip chip--accent">{HOSTING_LABEL[hosting] ?? hosting}</span>
-            <span className="chip">{humanise(node.group)}</span>
+            <span className="chip chip--accent">{t(HOSTING_LABEL[hosting] ?? hosting)}</span>
+            <span className="chip">{text(humanise(node.group))}</span>
             <span className="chip mono">{node.id}</span>
+            {result?.agentName ? <span className="chip mono">{result.agentName}</span> : null}
           </div>
         </div>
 
@@ -83,64 +80,66 @@ export function AgentDetailPanel({ node, state, result, onClose }: AgentDetailPa
         </div>
 
         <div className="detail__block">
-          <span className="detail__block-title">Input</span>
-          <pre className="detail__json detail__json--input">{result?.input || DASH}</pre>
+          <span className="detail__block-title">{t('Input')}</span>
+          <pre className="detail__json detail__json--input">{result?.input ? json(result.input) : DASH}</pre>
         </div>
 
         {result?.error ? (
           <div className="detail__error">
-            <span className="detail__block-title">Error</span>
-            <p>{result.error}</p>
+            <span className="detail__block-title">{t('Error')}</span>
+            <p>{text(result.error)}</p>
           </div>
         ) : null}
 
-        <div className="detail__block">
-          <span className="detail__block-title">Output</span>
-          {result?.narrative ? (
-            <p className="detail__narrative">{result.narrative}</p>
-          ) : (
-            <p className="detail__placeholder">
-              {state === 'pending'
-                ? 'This agent has not run yet.'
-                : state === 'running'
-                  ? 'Agent is reasoning…'
-                  : DASH}
-            </p>
-          )}
-        </div>
-
-        <div className="detail__block">
-          <button
-            type="button"
-            className="detail__toggle"
-            onClick={() => setStructuredOpen((open) => !open)}
-            aria-expanded={structuredOpen}
-            disabled={!hasStructured}
-          >
-            <span className={`detail__caret ${structuredOpen ? 'detail__caret--open' : ''}`}>
-              ▸
-            </span>
-            Structured output
-            {hasStructured ? (
-              <span className="detail__count">
-                {Object.keys(result?.structured ?? {}).length} keys
-              </span>
+        <section className="detail__output" aria-labelledby="agent-output-title">
+          <div className="detail__block">
+            <h3 className="detail__block-title" id="agent-output-title">{t('Output')}</h3>
+            {result?.narrative ? (
+              <p className="detail__narrative">{text(result.narrative)}</p>
             ) : (
-              <span className="detail__count">empty</span>
+              <p className="detail__placeholder">
+                {state === 'pending'
+                  ? t('This agent has not run yet.')
+                  : state === 'running'
+                    ? t('Agent is reasoning…')
+                    : DASH}
+              </p>
             )}
-          </button>
-          {structuredOpen && hasStructured ? (
-            <pre className="detail__json">{structuredText}</pre>
-          ) : null}
-        </div>
+          </div>
+
+          <div className="detail__block">
+            <button
+              type="button"
+              className="detail__toggle"
+              onClick={() => setStructuredOpen((open) => !open)}
+              aria-expanded={structuredOpen}
+              disabled={!hasStructured}
+            >
+              <span className={`detail__caret ${structuredOpen ? 'detail__caret--open' : ''}`}>
+                ▸
+              </span>
+              {t('Structured output')}
+              {hasStructured ? (
+                <span className="detail__count">
+                  {t('{count} keys', { count: formatNumber(Object.keys(result?.structured ?? {}).length) })}
+                </span>
+              ) : (
+                <span className="detail__count">{t('empty')}</span>
+              )}
+            </button>
+            {structuredOpen && hasStructured ? (
+              <pre className="detail__json">{structuredText}</pre>
+            ) : null}
+          </div>
+        </section>
 
         <div className="detail__block">
           <span className="detail__block-title">
-            Tool calls
-            <span className="detail__count">{toolCalls.length}</span>
+            {t('Tool calls')}
+            <span className="detail__count">{formatNumber(toolCalls.length)}</span>
           </span>
           {toolCalls.length === 0 ? (
-            <p className="detail__placeholder">No tools were invoked.</p>
+            <p className="detail__placeholder">{t('No tools were invoked.')}</p>
           ) : (
             <ul className="detail__tools">
               {toolCalls.map((call, index) => (
@@ -156,6 +155,7 @@ export function AgentDetailPanel({ node, state, result, onClose }: AgentDetailPa
 }
 
 function ToolCallRow({ call }: { call: ToolCall }) {
+  const { t, json } = useI18n();
   const [open, setOpen] = useState(false);
 
   return (
@@ -167,21 +167,21 @@ function ToolCallRow({ call }: { call: ToolCall }) {
         aria-expanded={open}
       >
         <span className={`detail__caret ${open ? 'detail__caret--open' : ''}`}>▸</span>
-        <span className="detail__tool-name mono">{call.toolName ?? 'unnamed tool'}</span>
+        <span className="detail__tool-name mono">{call.toolName ?? t('unnamed tool')}</span>
         <span className="detail__tool-time mono">{formatDurationMs(call.durationMs)}</span>
       </button>
       {open ? (
         <div className="detail__tool-body">
           <div className="detail__tool-field">
-            <span className="detail__tool-label">Arguments</span>
+            <span className="detail__tool-label">{t('Arguments')}</span>
             <pre className="detail__json detail__json--inline">
-              {call.arguments ? truncate(String(call.arguments), 1200) : DASH}
+              {call.arguments ? json(call.arguments) : DASH}
             </pre>
           </div>
           <div className="detail__tool-field">
-            <span className="detail__tool-label">Result</span>
+            <span className="detail__tool-label">{t('Result')}</span>
             <pre className="detail__json detail__json--inline">
-              {call.result ? truncate(String(call.result), 1600) : DASH}
+              {call.result ? json(call.result) : DASH}
             </pre>
           </div>
         </div>
@@ -191,9 +191,10 @@ function ToolCallRow({ call }: { call: ToolCall }) {
 }
 
 function Metric({ label, value }: { label: string; value: string }) {
+  const { t } = useI18n();
   return (
     <div className="detail__metric">
-      <span className="detail__metric-label">{label}</span>
+      <span className="detail__metric-label">{t(label)}</span>
       <span className="detail__metric-value mono">{value}</span>
     </div>
   );

@@ -59,7 +59,8 @@ export function App() {
   const logIdRef = useRef(0);
   const manualSelectionRef = useRef(false);
 
-  const appendLog = useCallback((level: LogLevel, label: string, message: string) => {
+  const appendLog = useCallback((level: LogLevel, label: string, message: string,
+    messageParams?: Record<string, string | number>) => {
     logIdRef.current += 1;
     const entry: LogEntry = {
       id: logIdRef.current,
@@ -67,6 +68,7 @@ export function App() {
       level,
       label,
       message,
+      messageParams,
     };
     setLogs((previous) => {
       const next = [...previous, entry];
@@ -83,7 +85,7 @@ export function App() {
       try {
         const health = await fetchHealth(controller.signal);
         setBackendOnline(true);
-        appendLog('info', 'health', `Backend reachable (${health.status ?? 'ok'}).`);
+        appendLog('info', 'health', 'Backend reachable ({status}).', { status: health.status ?? 'ok' });
       } catch {
         if (!controller.signal.aborted) {
           setBackendOnline(false);
@@ -101,7 +103,8 @@ export function App() {
           appendLog(
             'info',
             'scenario',
-            `Topology loaded: ${scenario.graph.nodes.length} agents, ${scenario.graph.edges?.length ?? 0} edges.`,
+            'Topology loaded: {agents} agents, {edges} edges.',
+            { agents: scenario.graph.nodes.length, edges: scenario.graph.edges?.length ?? 0 },
           );
         }
         if (scenario.signal) setSignal(scenario.signal);
@@ -200,7 +203,8 @@ export function App() {
           appendLog(
             'info',
             'started',
-            `${started.agentName ?? humanise(started.nodeId)}${started.hostingMode ? ` (${started.hostingMode})` : ''}`,
+            '{agent} ({hosting})',
+            { agent: started.agentName ?? humanise(started.nodeId), hosting: started.hostingMode ?? 'system' },
           );
           break;
         }
@@ -221,7 +225,8 @@ export function App() {
           appendLog(
             'success',
             'completed',
-            `${result?.agentName ?? humanise(completed.nodeId)} · ${result?.totalTokens ?? 0} tokens`,
+            '{agent} · {tokens} tokens',
+            { agent: result?.agentName ?? humanise(completed.nodeId), tokens: result?.totalTokens ?? 0 },
           );
           break;
         }
@@ -261,7 +266,8 @@ export function App() {
           appendLog(
             'gate',
             'approval',
-            `Run paused at ${humanise(gate.nodeId)} — ${gate.options?.length ?? 0} options, recommending ${gate.recommendation?.optionId ?? 'n/a'}.`,
+            'Run paused at {node} — {count} options, recommending {option}.',
+            { node: humanise(gate.nodeId), count: gate.options?.length ?? 0, option: gate.recommendation?.optionId ?? 'n/a' },
           );
           break;
         }
@@ -293,7 +299,8 @@ export function App() {
           appendLog(
             'success',
             'run completed',
-            `${summary?.totalTokens ?? 0} tokens in ${Math.round((summary?.durationMs ?? 0) / 1000)} s.`,
+            '{tokens} tokens in {seconds} s.',
+            { tokens: summary?.totalTokens ?? 0, seconds: Math.round((summary?.durationMs ?? 0) / 1000) },
           );
           break;
         }
@@ -424,7 +431,8 @@ export function App() {
           appendLog(
             'gate',
             'approved',
-            `Option ${payload.optionId} authorised by ${payload.approver}.`,
+            'Option {option} authorised by {approver}.',
+            { option: payload.optionId, approver: payload.approver },
           );
         } catch (error) {
           const message = error instanceof Error ? error.message : String(error);

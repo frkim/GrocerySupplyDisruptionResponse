@@ -25,6 +25,12 @@ from .contracts import EventType, RunContext
 from .data import get_repository
 from .knowledge import get_knowledge
 from .llm import get_engine
+from .localization import (
+    TranslationRequest,
+    TranslationResponse,
+    read_translation_request,
+    translate_display_texts,
+)
 from .orchestration.engine import REGISTRY
 from .orchestration.workflow import GATE_HANDLER, build_orchestrator, signal_from_dict
 from .paths import data_dir
@@ -108,6 +114,27 @@ def _load_reference_signal() -> dict[str, Any]:
 # --------------------------------------------------------------------------------------
 # Core API
 # --------------------------------------------------------------------------------------
+
+@app.post(
+    "/api/translate",
+    response_model=TranslationResponse,
+    openapi_extra={
+        "requestBody": {
+            "required": True,
+            "content": {"application/json": {"schema": TranslationRequest.model_json_schema()}},
+        },
+    },
+)
+async def translate(request: Request) -> TranslationResponse:
+    """Display-only en/fr/de/es translation: 1–24 texts, 12k chars each, 40k total.
+
+    Maximum encoded body: 512,000 bytes. Translation deadline: 30 seconds,
+    including the shared model gate. Errors: 422 invalid request, 503 no model,
+    502 invalid/provider response, 504 timeout. Originals and runs are never modified.
+    """
+    payload = await read_translation_request(request)
+    return await translate_display_texts(payload)
+
 
 @app.get("/api/health")
 async def health() -> dict[str, Any]:
@@ -370,4 +397,3 @@ if __name__ == "__main__":
     import uvicorn
 
     uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT", "8000")))
-

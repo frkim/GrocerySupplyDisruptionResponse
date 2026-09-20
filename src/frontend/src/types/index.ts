@@ -255,4 +255,5 @@ export interface LogEntry {
   level: LogLevel;
   label: string;
   message: string;
+  messageParams?: Record<string, string | number>;
 }

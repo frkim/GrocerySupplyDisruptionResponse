@@ -2,6 +2,25 @@
 
 Grocery Supply Disruption Response is an agentic response console for a fictional national grocery retailer: twenty specialized AI agents detect, assess and coordinate Vivalis Retail Group's response to a nationwide egg shortage caused by a highly pathogenic avian influenza outbreak.
 
+## Multilingual response console
+
+Use the flag selector immediately before the theme button to switch between
+English (**EN**), French (**FR**), German (**GER**), and Spanish (**ES**).
+The preference is remembered, and switching language does not restart a run or
+discard an approval selection. Interface labels, reference incident content,
+agent descriptions, scenario details, event messages, and execution output use
+the selected language; numbers, currencies, and dates use its locale.
+
+Bundled catalogs translate the interface and reference content without a model
+call. New agent-generated prose is translated on demand using the existing Azure
+OpenAI deployment. A visible translation status and retry control distinguish
+in-progress or unavailable translations from translated content. Operational IDs,
+amounts, tool names, and submitted decisions stay unchanged.
+
+Execution details give narrative and structured **Output** a high-contrast panel,
+including a white surface with dark text in dark mode. See
+[Console languages](docs/08-console-languages.md) for behavior and configuration.
+
 ## Scenario
 
 Vivalis Retail Group operates 1,180 stores across hypermarket, supermarket, convenience, and drive/click-and-collect formats, supplied by 8 regional distribution centres. The reference incident starts when avian influenza cuts national shell-egg production, creating a ~38% supply shortfall while demand surges by ~44%. Days of cover collapse unevenly across `NORTH`, `SOUTH`, `EAST`, `WEST`, and `CENTRE`; live promotions are still active; and private-label bakery and ready-meal SKUs that consume liquid or industrial egg are exposed.

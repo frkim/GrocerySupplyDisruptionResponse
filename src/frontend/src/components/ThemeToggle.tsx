@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { applyTheme, resolveInitialTheme, writeThemeCookie, type Theme } from '../lib/theme';
+import { useI18n } from '../lib/i18n';
 import './ThemeToggle.css';
 
 export function ThemeToggle() {
+  const { t } = useI18n();
   const [theme, setTheme] = useState<Theme>(resolveInitialTheme);
 
   useEffect(() => {
@@ -11,7 +13,7 @@ export function ThemeToggle() {
   }, [theme]);
 
   const next: Theme = theme === 'dark' ? 'light' : 'dark';
-  const label = `Switch to ${next} theme`;
+  const label = next === 'light' ? t('Switch to light theme') : t('Switch to dark theme');
 
   return (
     <button

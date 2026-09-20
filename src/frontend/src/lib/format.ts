@@ -1,4 +1,5 @@
 import type { HostingMode, NodeState } from '../types';
+import { getLocale } from './localization';
 
 /** Read the first present key from an object, tolerating camelCase/snake_case drift. */
 export function pick(source: unknown, keys: string[]): unknown {
@@ -37,27 +38,32 @@ export const DASH = '—';
 
 export function formatCurrencyEur(value: number | undefined): string {
   if (value === undefined) return DASH;
-  const abs = Math.abs(value);
-  if (abs >= 1_000_000) return `€${(value / 1_000_000).toFixed(2)}M`;
-  if (abs >= 1_000) return `€${(value / 1_000).toFixed(0)}k`;
-  return `€${value.toFixed(0)}`;
+  return new Intl.NumberFormat(getLocale(), {
+    style: 'currency',
+    currency: 'EUR',
+    notation: Math.abs(value) >= 1000 ? 'compact' : 'standard',
+    maximumFractionDigits: Math.abs(value) >= 1_000_000 ? 2 : 0,
+  }).format(value);
 }
 
 export function formatNumber(value: number | undefined): string {
   if (value === undefined) return DASH;
-  return new Intl.NumberFormat('en-GB').format(Math.round(value));
+  return new Intl.NumberFormat(getLocale()).format(Math.round(value));
 }
 
 export function formatTokens(value: number | undefined): string {
   if (value === undefined) return DASH;
-  if (value >= 1000) return `${(value / 1000).toFixed(1)}k`;
-  return String(value);
+  return new Intl.NumberFormat(getLocale(), {
+    notation: value >= 1000 ? 'compact' : 'standard', maximumFractionDigits: 1,
+  }).format(value);
 }
 
 export function formatDurationMs(value: number | undefined): string {
   if (value === undefined) return DASH;
-  if (value < 1000) return `${Math.round(value)} ms`;
-  return `${(value / 1000).toFixed(1)} s`;
+  if (value < 1000) return `${formatNumber(value)} ms`;
+  return `${new Intl.NumberFormat(getLocale(), {
+    minimumFractionDigits: 1, maximumFractionDigits: 1,
+  }).format(value / 1000)} s`;
 }
 
 export function formatElapsed(ms: number): string {
@@ -87,10 +93,11 @@ export function estimateCostUsd(promptTokens = 0, completionTokens = 0): number 
 }
 
 export function formatUsd(value: number): string {
-  if (value >= 1) return `$${value.toFixed(2)}`;
-  if (value >= 0.01) return `$${value.toFixed(3)}`;
-  if (value === 0) return '$0.0000';
-  return `$${value.toFixed(4)}`;
+  const digits = value >= 1 ? 2 : value >= 0.01 ? 3 : 4;
+  return new Intl.NumberFormat(getLocale(), {
+    style: 'currency', currency: 'USD',
+    minimumFractionDigits: digits, maximumFractionDigits: digits,
+  }).format(value);
 }
 
 export const HOSTING_LABEL: Record<HostingMode, string> = {

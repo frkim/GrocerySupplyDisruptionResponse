@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { LogEntry } from '../types';
 import { formatClock } from '../lib/format';
+import { useI18n } from '../lib/i18n';
 import './EventLog.css';
 
 interface EventLogProps {
@@ -8,6 +9,7 @@ interface EventLogProps {
 }
 
 export function EventLog({ entries }: EventLogProps) {
+  const { t, text, locale } = useI18n();
   const [pinned, setPinned] = useState(true);
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
@@ -20,30 +22,33 @@ export function EventLog({ entries }: EventLogProps) {
   return (
     <section className="card log">
       <div className="card__head">
-        <h2 className="card__title">Event stream</h2>
+        <h2 className="card__title">{t('Event stream')}</h2>
         <div className="log__head-actions">
-          <span className="chip">{entries.length}</span>
+          <span className="chip">{entries.length.toLocaleString(locale)}</span>
           <button
             type="button"
             className={`log__pin ${pinned ? 'log__pin--on' : ''}`}
             onClick={() => setPinned((value) => !value)}
-            title={pinned ? 'Auto-scroll on' : 'Auto-scroll off'}
+            title={pinned ? t('Auto-scroll on') : t('Auto-scroll off')}
+            aria-pressed={pinned}
           >
-            {pinned ? 'Following' : 'Paused'}
+            {pinned ? t('Following') : t('Paused')}
           </button>
         </div>
       </div>
 
       <div className="card__body card__body--flush log__scroll" ref={scrollRef}>
         {entries.length === 0 ? (
-          <p className="empty">No events yet. Start a run to stream orchestration activity.</p>
+          <p className="empty">{t('No events yet. Start a run to stream orchestration activity.')}</p>
         ) : (
           <ul className="log__list">
             {entries.map((entry) => (
               <li key={entry.id} className={`log__item log__item--${entry.level}`}>
                 <span className="log__time mono">{formatClock(entry.at)}</span>
-                <span className="log__label">{entry.label}</span>
-                <span className="log__msg">{entry.message}</span>
+                <span className="log__label" title={text(entry.label)}>{text(entry.label)}</span>
+                <span className="log__msg">
+                  {entry.messageParams ? t(entry.message, entry.messageParams) : text(entry.message)}
+                </span>
               </li>
             ))}
           </ul>

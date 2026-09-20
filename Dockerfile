@@ -5,6 +5,7 @@ RUN npm config set registry https://packagefeedproxy.microsoft.io/npm/
 COPY src/frontend/package.json src/frontend/package-lock.json ./
 RUN npm ci --no-audit --no-fund
 COPY src/frontend/ ./
+COPY data/locales/ /app/data/locales/
 RUN npm run build
 
 # Stage 2: Python runtime serving both the API and the built UI.

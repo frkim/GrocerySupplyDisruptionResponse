@@ -129,6 +129,10 @@ jobs:
         working-directory: src/frontend
         run: npm run build
 
+      - name: Test display localization
+        working-directory: src/frontend
+        run: npm test
+
   data:
     name: Data validation
     runs-on: ubuntu-latest

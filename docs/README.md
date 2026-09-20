@@ -9,6 +9,6 @@
 | [05-data-model.md](05-data-model.md) | Fourteen datasets, field lists, container mapping, knowledge corpus, and referential-integrity rules. |
 | [06-deployment.md](06-deployment.md) | Bicep provisioning, seeding, container build, workflows, required secret, front-end URL, and troubleshooting. |
 | [07-extending.md](07-extending.md) | How to add agents, tools, datasets, scenarios, Databricks signals, and external A2A consumers. |
+| [08-console-languages.md](08-console-languages.md) | Language selection, display-only translation, model requirements, and execution-output contrast. |
 
 Start with the [top-level README](../README.md) for the product pitch, quickstart, repository layout, and documentation links.
-

@@ -1,5 +1,7 @@
 import type { RunStatus } from '../types';
 import { formatElapsed, formatNumber } from '../lib/format';
+import { useI18n } from '../lib/i18n';
+import { isLanguage } from '../lib/localization';
 import ThemeToggle from './ThemeToggle';
 import './Header.css';
 
@@ -36,6 +38,7 @@ export function Header({
   onRun,
   onReset,
 }: HeaderProps) {
+  const { language, setLanguage, t, pending, error, retry } = useI18n();
   const running = status === 'running' || status === 'awaiting';
 
   return (
@@ -45,45 +48,45 @@ export function Header({
           <span />
         </div>
         <div className="hdr__names">
-          <h1 className="hdr__product">Grocery Supply Disruption Response</h1>
+          <h1 className="hdr__product">{t('Grocery Supply Disruption Response')}</h1>
           <p className="hdr__sub">
-            Vivalis Retail Group · Agentic response console — nationwide egg shortage
+            {t('Vivalis Retail Group · Agentic response console — nationwide egg shortage')}
             <span className={`hdr__conn hdr__conn--${connClass(backendOnline)}`}>
               {backendOnline === null
-                ? 'checking backend'
+                ? t('checking backend')
                 : backendOnline
-                  ? 'backend online'
-                  : 'backend offline'}
+                  ? t('backend online')
+                  : t('backend offline')}
             </span>
           </p>
         </div>
       </div>
 
       <div className="hdr__meta">
-        <span className="hdr__incident" title="Active incident">
+        <span className="hdr__incident" title={t('Active incident')}>
           <span className="hdr__incident-dot" aria-hidden="true" />
-          {incidentId ?? 'No active incident'}
+          {incidentId ?? t('No active incident')}
         </span>
 
         <span className={`hdr__pill hdr__pill--${status}`}>
           <span className="hdr__pill-dot" aria-hidden="true" />
-          {STATUS_TEXT[status]}
+          {t(STATUS_TEXT[status])}
         </span>
 
         <div className="hdr__stat">
-          <span className="hdr__stat-label">Elapsed</span>
+          <span className="hdr__stat-label">{t('Elapsed')}</span>
           <span className="hdr__stat-value mono">{formatElapsed(elapsedMs)}</span>
         </div>
 
         <div className="hdr__stat">
-          <span className="hdr__stat-label">Tokens</span>
+          <span className="hdr__stat-label">{t('Tokens')}</span>
           <span className="hdr__stat-value mono">{formatNumber(totalTokens)}</span>
         </div>
 
         <div className="hdr__stat">
-          <span className="hdr__stat-label">Agents</span>
+          <span className="hdr__stat-label">{t('Agents')}</span>
           <span className="hdr__stat-value mono">
-            {completedNodes}/{totalNodes}
+            {formatNumber(completedNodes)}/{formatNumber(totalNodes)}
           </span>
         </div>
       </div>
@@ -96,14 +99,74 @@ export function Header({
           onClick={onRun}
           disabled={running}
         >
-          {running ? 'Running…' : 'Run demonstration'}
+          {running ? t('Running…') : t('Run demonstration')}
         </button>
         <button type="button" className="btn" onClick={onReset} disabled={status === 'idle'}>
-          Reset
+          {t('Reset')}
         </button>
+        <label className="hdr__language" title={t('Language')}>
+          <LanguageFlag language={language} />
+          <select
+            aria-label={t('Language')}
+            value={language}
+            onChange={(event) => {
+              const value = event.target.value;
+              if (isLanguage(value)) setLanguage(value);
+            }}
+          >
+            <option value="en">🇬🇧 EN — {t('English')}</option>
+            <option value="fr">🇫🇷 FR — {t('French')}</option>
+            <option value="de">🇩🇪 GER — {t('German')}</option>
+            <option value="es">🇪🇸 ES — {t('Spanish')}</option>
+          </select>
+        </label>
         <ThemeToggle />
       </div>
+      {error || pending ? (
+        <div className="hdr__translation" role="status" aria-live="polite">
+          {error ? t('Translation unavailable. Showing original text.') : t('Translating content…')}
+          {error ? (
+            <button type="button" className="btn" onClick={retry}>
+              {t('Retry translation')}
+            </button>
+          ) : null}
+        </div>
+      ) : null}
     </header>
+  );
+}
+
+function LanguageFlag({ language }: { language: 'en' | 'fr' | 'de' | 'es' }) {
+  return (
+    <svg className="hdr__flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false">
+      {language === 'en' ? (
+        <>
+          <path fill="#012169" d="M0 0h30v20H0z" />
+          <path stroke="#fff" strokeWidth="5" d="m0 0 30 20M30 0 0 20" />
+          <path stroke="#c8102e" strokeWidth="2" d="m0 0 30 20M30 0 0 20" />
+          <path stroke="#fff" strokeWidth="7" d="M15 0v20M0 10h30" />
+          <path stroke="#c8102e" strokeWidth="4" d="M15 0v20M0 10h30" />
+        </>
+      ) : language === 'fr' ? (
+        <>
+          <path fill="#fff" d="M0 0h30v20H0z" />
+          <path fill="#002395" d="M0 0h10v20H0z" />
+          <path fill="#ed2939" d="M20 0h10v20H20z" />
+        </>
+      ) : language === 'de' ? (
+        <>
+          <path fill="#ffce00" d="M0 0h30v20H0z" />
+          <path fill="#d00" d="M0 0h30v13.33H0z" />
+          <path fill="#000" d="M0 0h30v6.67H0z" />
+        </>
+      ) : (
+        <>
+          <path fill="#aa151b" d="M0 0h30v20H0z" />
+          <path fill="#f1bf00" d="M0 5h30v10H0z" />
+          <path fill="#aa151b" d="M8 8h4v5H8z" />
+        </>
+      )}
+    </svg>
   );
 }
 

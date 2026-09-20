@@ -1,5 +1,6 @@
 import type { ScenarioOption, ScenarioScores } from '../types';
 import { DASH, formatCurrencyEur } from '../lib/format';
+import { useI18n } from '../lib/i18n';
 import './ScenarioComparison.css';
 
 interface ScenarioComparisonProps {
@@ -23,6 +24,11 @@ export function ScenarioComparison({
   selectedId,
   onSelect,
 }: ScenarioComparisonProps) {
+  const { t, text, locale } = useI18n();
+  const score = (value: number) => value.toLocaleString(locale, {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  });
   if (options.length === 0) return null;
 
   const maxScore = Math.max(
@@ -35,8 +41,8 @@ export function ScenarioComparison({
   return (
     <section className="card">
       <div className="card__head">
-        <h2 className="card__title">Mitigation scenarios</h2>
-        <span className="chip">{options.length} options evaluated</span>
+        <h2 className="card__title">{t('Mitigation scenarios')}</h2>
+        <span className="chip">{t('{count} options evaluated', { count: options.length.toLocaleString(locale) })}</span>
       </div>
 
       <div className="card__body scen">
@@ -60,11 +66,11 @@ export function ScenarioComparison({
               >
                 <header className="scen__head">
                   <span className="scen__id">{option.optionId}</span>
-                  <h3 className="scen__title">{option.title ?? `Option ${option.optionId}`}</h3>
-                  {recommended ? <span className="scen__flag">Recommended</span> : null}
+                  <h3 className="scen__title">{option.title ? text(option.title) : t('Option {id}', { id: option.optionId })}</h3>
+                  {recommended ? <span className="scen__flag">{t('Recommended')}</span> : null}
                 </header>
 
-                <p className="scen__desc">{option.description ?? DASH}</p>
+                <p className="scen__desc">{option.description ? text(option.description) : DASH}</p>
 
                 <div className="scen__facts">
                   <Fact label="Cost" value={formatCurrencyEur(option.costEur)} />
@@ -72,31 +78,31 @@ export function ScenarioComparison({
                     label="Time to implement"
                     value={
                       option.timeToImplementDays !== undefined
-                        ? `${option.timeToImplementDays} d`
+                        ? t('{count} d', { count: option.timeToImplementDays.toLocaleString(locale) })
                         : DASH
                     }
                   />
                   <Fact
                     label="Risk"
-                    value={option.riskLevel ?? DASH}
+                    value={option.riskLevel ? text(option.riskLevel) : DASH}
                     tone={riskTone(option.riskLevel)}
                   />
                   <Fact
                     label="Primary lever"
-                    value={formatLever(option.leverPrimary)}
+                    value={option.leverPrimary ? text(formatLever(option.leverPrimary)) : DASH}
                   />
                   <Fact
                     label="Shelf recovery"
                     value={
                       option.shelfAvailabilityRecoveryPct !== undefined
-                        ? `${option.shelfAvailabilityRecoveryPct.toFixed(0)}%`
+                        ? new Intl.NumberFormat(locale, { style: 'percent', maximumFractionDigits: 0 }).format(option.shelfAvailabilityRecoveryPct / 100)
                         : DASH
                     }
                   />
                   <Fact
                     label="Total score"
                     value={
-                      option.totalScore !== undefined ? option.totalScore.toFixed(1) : DASH
+                      option.totalScore !== undefined ? score(option.totalScore) : DASH
                     }
                     strong
                   />
@@ -109,7 +115,7 @@ export function ScenarioComparison({
                     const pct = maxScore > 0 ? Math.min(100, (value / maxScore) * 100) : 0;
                     return (
                       <div key={String(key)} className="scen__score">
-                        <span className="scen__score-label">{label}</span>
+                        <span className="scen__score-label">{t(label)}</span>
                         <span className="scen__score-track">
                           <span
                             className="scen__score-fill"
@@ -117,7 +123,7 @@ export function ScenarioComparison({
                           />
                         </span>
                         <span className="scen__score-value mono">
-                          {raw === undefined ? DASH : value.toFixed(1)}
+                          {raw === undefined ? DASH : score(value)}
                         </span>
                       </div>
                     );
@@ -126,12 +132,12 @@ export function ScenarioComparison({
 
                 <div className="scen__foot">
                   <div className="scen__foot-item">
-                    <span className="scen__foot-label">Customer impact</span>
-                    <span className="scen__foot-value">{option.customerImpact ?? DASH}</span>
+                    <span className="scen__foot-label">{t('Customer impact')}</span>
+                    <span className="scen__foot-value">{option.customerImpact ? text(option.customerImpact) : DASH}</span>
                   </div>
                   <div className="scen__foot-item">
-                    <span className="scen__foot-label">Expected outcome</span>
-                    <span className="scen__foot-value">{option.expectedOutcome ?? DASH}</span>
+                    <span className="scen__foot-label">{t('Expected outcome')}</span>
+                    <span className="scen__foot-value">{option.expectedOutcome ? text(option.expectedOutcome) : DASH}</span>
                   </div>
                   <ListFact label="Key actions" items={option.keyActions} />
                   <ListFact label="Dependencies" items={option.dependencies} />
@@ -156,9 +162,10 @@ function Fact({
   tone?: string;
   strong?: boolean;
 }) {
+  const { t } = useI18n();
   return (
     <div className="scen__fact">
-      <span className="scen__fact-label">{label}</span>
+      <span className="scen__fact-label">{t(label)}</span>
       <span
         className={[
           'scen__fact-value',
@@ -193,13 +200,14 @@ function formatLever(lever: string | undefined): string {
 }
 
 function ListFact({ label, items }: { label: string; items?: string[] }) {
+  const { t, text } = useI18n();
   if (!items?.length) return null;
   return (
     <div className="scen__foot-item">
-      <span className="scen__foot-label">{label}</span>
+      <span className="scen__foot-label">{t(label)}</span>
       <ul className="scen__list">
         {items.slice(0, 3).map((item) => (
-          <li key={item}>{item}</li>
+          <li key={item}>{text(item)}</li>
         ))}
       </ul>
     </div>

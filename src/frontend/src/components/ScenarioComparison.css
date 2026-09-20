@@ -135,6 +135,7 @@
 .scen__score-label {
   font-size: 10.5px;
   color: var(--text-dim);
+  overflow-wrap: anywhere;
 }
 
 .scen__score-track {
