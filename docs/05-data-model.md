@@ -2,6 +2,35 @@
 
 Every dataset is a JSON array of objects. Every object has a unique `id` and a `partitionKey` equal to the stable grouping value required for Cosmos DB seeding.
 
+## Dataset relationships
+
+```mermaid
+erDiagram
+    PRODUCTS ||--o{ INVENTORY : "productId"
+    PRODUCTS ||--o{ DEMAND_FORECAST : "productId"
+    PRODUCTS ||--o{ SUBSTITUTES : "productId / substituteProductId"
+    PRODUCTS ||--o{ COMMITMENTS : "skuId"
+    PRODUCTS ||--o{ PROMOTIONS : "skuIds"
+    PRODUCTS ||--o{ REPLENISHMENT_SCHEDULE : "productId"
+    PRODUCTS ||--o{ PAST_DISRUPTIONS : "productId"
+    PRODUCTS ||--o{ SIGNALS : "productId / impactedSkus"
+    PRODUCTS }o--o{ PRODUCTS : "inputProductIds / substituteProductIds"
+    SUPPLIERS ||--o{ PRODUCTS : "primarySupplierId / alternateSupplierIds"
+    SUPPLIERS ||--o{ REPLENISHMENT_SCHEDULE : "supplierId"
+    SUPPLIERS ||--o{ SIGNALS : "supplierId"
+    WAREHOUSES ||--o{ STORES : "servedByWarehouseId"
+    WAREHOUSES ||--o{ INVENTORY : "locationId when warehouse"
+    WAREHOUSES ||--o{ REPLENISHMENT_SCHEDULE : "warehouseId"
+    WAREHOUSES ||--o{ SIGNALS : "affectedWarehouses"
+    STORES ||--o{ INVENTORY : "locationId when store"
+    STORES }o--o{ PRODUCTS : "skusStocked"
+```
+
+`playbooks.json` and `stakeholders.json` are reference datasets used by retrieval
+and execution nodes rather than keyed foreign tables; the remaining twelve
+datasets are linked by the identifiers shown above and enforced by the
+[referential-integrity rules](#referential-integrity-rules).
+
 ## Container mapping
 
 | Cosmos container | Repository file |

@@ -10,6 +10,17 @@
 6. Add it to the scheduler dependency list and frontend graph metadata.
 7. Update `docs/03-agents.md`, `docs/04-orchestration.md`, and the README agent table.
 
+```mermaid
+flowchart LR
+    graphdef[Canonical graph definition] --> deps[Scheduler dependency list]
+    graphdef --> uimeta[Frontend graph metadata]
+    mode[Hosting mode] --> runner[Agent runner dispatch]
+    contract[JSON output contract] --> runner
+    toolbind[Tool bindings from the 17-tool catalogue] --> runner
+    runner --> docs["Docs: 03-agents, 04-orchestration, README"]
+    deps --> docs
+```
+
 A new validation agent should normally depend on `response_planner` and feed `scenario_evaluation`. A new execution agent should normally depend on `executive_gate` and feed `executive_briefing`.
 
 ## Add a tool
@@ -52,6 +63,16 @@ The current detection source is `databricks-stub`. A Databricks job can replace 
 The orchestrator does not need to know whether the signal came from the bundled dataset, an HTTP caller, or Databricks as long as the contract is preserved.
 
 ## A2A agent cards and external orchestration
+
+```mermaid
+sequenceDiagram
+    participant Ext as External orchestrator
+    participant API as Grocery Supply Disruption Response app
+    Ext->>API: GET /a2a/{agent_name}/.well-known/agent-card.json
+    API-->>Ext: protocolVersion, name, url, capabilities, skills
+    Ext->>API: POST /a2a/{agent_name} JSON-RPC message/send
+    API-->>Ext: narrative and structured JSON result
+```
 
 Every A2A-capable agent exposes an agent card at `/a2a/{agent_name}/.well-known/agent-card.json` and accepts JSON-RPC 2.0 `message/send` at `/a2a/{agent_name}`. The card advertises `protocolVersion`, `name`, `description`, `version`, `url`, `capabilities`, input/output modes, and skills.
 

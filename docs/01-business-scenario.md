@@ -8,9 +8,32 @@ The first signal, `INC-2026-0042`, reports `SKU-EGG-0001` as the lead product, a
 
 ## Root cause
 
+```mermaid
+flowchart LR
+    hpai[Avian influenza outbreak] --> culls[Laying-hen culls and<br/>movement restrictions]
+    culls --> packing[Constrained packing-centre<br/>throughput]
+    packing --> supply[38% shell-egg<br/>supply shortfall]
+    media[Media coverage] --> stockpiling[Shopper stockpiling]
+    promos[Live promotions] --> stockpiling
+    stockpiling --> demand[44% demand surge]
+    supply --> cover[Days of cover collapse<br/>across five regions]
+    demand --> cover
+    cover --> shelf[Shelf-availability risk]
+    cover --> ownbrand[Own-brand bakery and<br/>ready-meal input risk]
+```
+
 The immediate root cause is loss of laying-hen capacity and associated movement restrictions after the outbreak. The commercial root cause is broader: shoppers react to media coverage by stockpiling; live promotions amplify demand; and egg-dependent own-brand bakery and ready-meal products consume the same constrained supply pool. This makes the disruption both a retail shelf-availability problem and an upstream manufacturing input problem.
 
 ## Timeline
+
+```mermaid
+timeline
+    title First 72 hours of the reference incident
+    Detection to 6 hours : Supplier confirmations and POS velocity show cover collapsing : Normalize the signal and scope the incident
+    6 to 24 hours : Store clusters diverge by format and region : Run demand, inventory, financial, and store impact concurrently
+    24 to 48 hours : Buyers need feasible response options : Generate and validate sourcing, allocation, substitution, pricing, and logistics
+    48 to 72 hours : Executive owners need one controlled plan : Score, deliberate if close, approve, and issue execution guidance
+```
 
 | Time window | Operational reality | Required system response |
 | --- | --- | --- |
@@ -20,6 +43,16 @@ The immediate root cause is loss of laying-hen capacity and associated movement 
 | 48 to 72 hours | Executive owners need one controlled action plan. | Score options, deliberate if the recommendation is close, obtain approval, and issue execution guidance. |
 
 ## Who is hurt
+
+```mermaid
+flowchart TD
+    incident[Egg shortage incident] --> ops[Store operations<br/>empty shelves, rationing, escalation]
+    incident --> merch[Merchandising and marketing<br/>live promotions and leaflets]
+    incident --> supplychain[Supply chain<br/>fair rebalancing across DCs]
+    incident --> ownbrand[Private-label bakery and ready meals<br/>hidden egg demand]
+    incident --> finance[Finance<br/>margin, penalties, sourcing cost]
+    incident --> compliance[Quality, legal, communications<br/>safety, welfare, consumer protection]
+```
 
 * Store operations teams face empty shelves, rationing questions, colleague escalation, and uneven truck arrivals.
 * Merchandising and marketing teams must pause or amend live egg promotions while managing printed leaflet commitments and digital content.
