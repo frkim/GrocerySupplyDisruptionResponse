@@ -7,7 +7,7 @@ flowchart LR
     user[Operations user] --> ui[React control room]
     ui -->|GET /api/scenario| api[FastAPI API]
     ui -->|POST /api/runs/stream| api
-    ui -->|POST /api/runs/{run_id}/decision| api
+    ui -->|"POST /api/runs/{run_id}/decision"| api
 
     subgraph app[Container App]
       api --> orch[Wave scheduler]
@@ -33,6 +33,35 @@ flowchart LR
 ```
 
 ## Request flow
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant UI as React control room
+    participant API as FastAPI API
+    participant SCH as Wave scheduler
+    participant AG as Agent nodes
+    participant AZ as Azure data and model services
+
+    UI->>API: GET /api/scenario
+    API-->>UI: signal, graph, agent metadata
+    UI->>API: POST /api/runs/stream
+    API->>SCH: create RunContext and start waves
+    SCH-->>UI: run_started (SSE)
+    loop every wave
+        SCH-->>UI: node_started
+        SCH->>AG: execute node
+        AG->>AZ: function tools and model calls
+        AZ-->>AG: data, knowledge, completions
+        AG-->>SCH: NodeResult
+        SCH-->>UI: node_completed / node_failed / node_skipped
+    end
+    SCH-->>UI: gate_awaiting (executive_gate)
+    UI->>API: POST /api/runs/{run_id}/decision
+    API->>SCH: resolve gate with approved option
+    SCH-->>UI: node_completed for remaining nodes
+    SCH-->>UI: run_completed with summary
+```
 
 1. `GET /api/health` reports model configuration, data source, knowledge source, and agent count.
 2. `GET /api/scenario` returns the reference `signals.json` record, the graph, and agent metadata.
@@ -77,6 +106,23 @@ Every SSE frame is emitted as `data: <json>\n\n`. The event `type` values are `r
 | Application Insights and Log Analytics | Capture request telemetry, traces, and operational diagnostics. |
 
 ## Degraded-mode strategy
+
+```mermaid
+flowchart TD
+    invoke[Tool or agent call] --> cosmos{Cosmos DB configured<br/>and healthy?}
+    cosmos -->|yes| cosmosread[Read Cosmos containers]
+    cosmos -->|no| jsonread["Read bundled data/*.json"]
+    invoke --> search{Azure AI Search<br/>available and populated?}
+    search -->|yes| searchread[Query knowledge index]
+    search -->|no| mdread["Chunk local data/knowledge/*.md"]
+    invoke --> foundry{Foundry hosted agent<br/>available?}
+    foundry -->|yes| hosted[Run hosted prompt agent]
+    foundry -->|no| shared[Run same instructions<br/>through shared model path]
+    shared --> aoai{Azure OpenAI configured?}
+    hosted --> aoai
+    aoai -->|yes| result[Model-backed NodeResult]
+    aoai -->|no| offline[Deterministic data-grounded simulation<br/>tagged _executionNote: simulated_offline]
+```
 
 Every Azure dependency is optional at process startup. If Cosmos DB is not configured or cannot serve a query, the repository reads bundled JSON files from `data/`. If Azure AI Search is not configured, empty, or unavailable, knowledge lookup falls back to local Markdown chunks under `data/knowledge/`. If Foundry-hosted agents are unavailable, the runner can execute the same instructions through the shared model path and annotate the result. If Azure OpenAI is absent, model-backed nodes fail gracefully while system endpoints, graph metadata, local data access, and the UI still load.
 

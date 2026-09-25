@@ -2,6 +2,31 @@
 
 Grocery Supply Disruption Response is an agentic response console for a fictional national grocery retailer: twenty specialized AI agents detect, assess and coordinate Vivalis Retail Group's response to a nationwide egg shortage caused by a highly pathogenic avian influenza outbreak.
 
+## Solution at a glance
+
+```mermaid
+flowchart LR
+    signal[Shortage signal] --> ui[React control room]
+    ui <-->|REST + SSE| api[FastAPI app]
+
+    subgraph engine[Orchestration engine]
+      api --> scheduler[Wave scheduler]
+      scheduler --> agents[20 agents<br/>foundry / local / a2a / system]
+      agents --> gate[Executive approval gate]
+    end
+
+    agents --> tools[17 function tools]
+    agents --> model[Azure OpenAI<br/>Microsoft Foundry]
+    tools --> data[(Cosmos DB<br/>14 datasets)]
+    tools --> knowledge[(Azure AI Search<br/>8 knowledge documents)]
+    data -. degraded .-> localdata["Bundled data/*.json"]
+    knowledge -. degraded .-> localknowledge["Local data/knowledge/*.md"]
+    gate --> briefing[Executive decision record]
+```
+
+Read the [architecture guide](docs/02-architecture.md) for the detailed component,
+request, and degraded-mode views.
+
 ## Multilingual response console
 
 Use the flag selector immediately before the theme button to switch between
@@ -27,33 +52,54 @@ Vivalis Retail Group operates 1,180 stores across hypermarket, supermarket, conv
 
 ## Orchestration DAG
 
-```text
-signal_normalizer
-        |
-situation_assessment
-        |
-historical_knowledge
-        |
-        +--> demand_forecast --------+
-        +--> network_inventory ------+   concurrent impact fan-out
-        +--> financial_impact -------+--> impact_synthesis
-        +--> store_impact -----------+
-                                      |
-                              response_planner
-                                      |
-        +--> sourcing_procurement ----+
-        +--> allocation_fairness -----+
-        +--> substitution_assortment -+   concurrent validation fan-out
-        +--> pricing_compliance ------+--> scenario_evaluation
-        +--> logistics_cold_chain ----+
-                                      |
-                              deliberation (conditional)
-                                      |
-                              executive_gate (human gate)
-                              /                         \
-                 store_operations          customer_communication
-                              \                         /
-                              executive_briefing
+```mermaid
+flowchart TD
+    signal_normalizer --> situation_assessment --> historical_knowledge
+
+    subgraph impact[Concurrent impact fan-out]
+      demand_forecast
+      network_inventory
+      financial_impact
+      store_impact
+    end
+
+    historical_knowledge --> demand_forecast
+    historical_knowledge --> network_inventory
+    historical_knowledge --> financial_impact
+    historical_knowledge --> store_impact
+    demand_forecast --> impact_synthesis
+    network_inventory --> impact_synthesis
+    financial_impact --> impact_synthesis
+    store_impact --> impact_synthesis
+
+    impact_synthesis --> response_planner
+
+    subgraph validation[Concurrent validation fan-out]
+      sourcing_procurement
+      allocation_fairness
+      substitution_assortment
+      pricing_compliance
+      logistics_cold_chain
+    end
+
+    response_planner --> sourcing_procurement
+    response_planner --> allocation_fairness
+    response_planner --> substitution_assortment
+    response_planner --> pricing_compliance
+    response_planner --> logistics_cold_chain
+    sourcing_procurement --> scenario_evaluation
+    allocation_fairness --> scenario_evaluation
+    substitution_assortment --> scenario_evaluation
+    pricing_compliance --> scenario_evaluation
+    logistics_cold_chain --> scenario_evaluation
+
+    scenario_evaluation -->|close call only| deliberation
+    scenario_evaluation -.->|deliberation skipped| executive_gate
+    deliberation --> executive_gate
+    executive_gate --> store_operations
+    executive_gate --> customer_communication
+    store_operations --> executive_briefing
+    customer_communication --> executive_briefing
 ```
 
 ## Orchestration patterns
@@ -236,3 +282,4 @@ Vivalis Retail Group, every supplier, every SKU, every store cluster, and all in
 * [Data model](docs/05-data-model.md)
 * [Deployment](docs/06-deployment.md)
 * [Extending](docs/07-extending.md)
+* [Console languages](docs/08-console-languages.md)

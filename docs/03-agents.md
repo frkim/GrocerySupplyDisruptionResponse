@@ -2,6 +2,26 @@
 
 This catalogue documents the canonical twenty-node roster. Node ids, agent names, labels, groups, and hosting modes are fixed by the design specification.
 
+## Hosting modes
+
+```mermaid
+flowchart LR
+    node[Graph node] --> mode{hostingMode}
+    mode -->|system| system[Deterministic Python node<br/>signal_normalizer, executive_gate]
+    mode -->|local| local[In-process agent inside FastAPI]
+    mode -->|foundry| foundryhosted[Foundry-hosted prompt agent]
+    mode -->|a2a| a2a["A2A JSON-RPC message/send<br/>/a2a/{agent_name}"]
+    foundryhosted -. hosted execution unavailable .-> shared[Shared model path<br/>same instructions]
+    local --> tools[Function tools]
+    a2a --> tools
+    foundryhosted --> tools
+    shared --> tools
+    local --> model[Azure OpenAI]
+    a2a --> model
+    shared --> model
+    foundryhosted --> model
+```
+
 ## Hosting summary
 
 | node_id | Agent | Purpose | Hosting |
@@ -48,6 +68,19 @@ This catalogue documents the canonical twenty-node roster. Node ids, agent names
 | `get_playbooks` | `category: str \| None` | response playbooks |
 | `get_stakeholders` | `function: str \| None` | stakeholder directory |
 | `search_knowledge` | `query: str` | knowledge-corpus passages, top 4 |
+
+Tools and retrieval ground every model-backed node in the same domain data:
+
+```mermaid
+flowchart LR
+    agent[Model-backed agent] --> tools[17 function tools]
+    agent --> retrieval[search_knowledge]
+    tools --> repo[Data repository]
+    repo --> cosmos[(Cosmos DB GroceryDisruptionDB)]
+    repo -. degraded .-> json["Bundled data/*.json"]
+    retrieval --> index[(Azure AI Search<br/>grocery-disruption-knowledge)]
+    retrieval -. degraded .-> md["Local data/knowledge/*.md"]
+```
 
 ## Detailed catalogue
 

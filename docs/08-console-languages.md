@@ -22,6 +22,22 @@ User-entered approver identity and notes are not silently rewritten on submissio
 
 ## Catalogs and generated content
 
+```mermaid
+flowchart TD
+    text[Display text] --> known{Key exists in<br/>data/locales/*.json?}
+    known -->|yes| bundled[Use bundled catalog translation<br/>no model call]
+    known -->|no| kind{Prose or raw tool payload?}
+    kind -->|raw payload| unchanged[Display unchanged]
+    kind -->|prose| batch["Batch up to 24 texts<br/>POST /api/translate"]
+    batch --> model[Shared Azure OpenAI chat engine]
+    model --> valid{Response and protected<br/>tokens valid?}
+    valid -->|yes| show[Cache and display translation]
+    valid -->|no| retry{Attempted three times<br/>or three failed requests?}
+    retry -->|no| batch
+    retry -->|yes| degraded[Show English source and<br/>surface retry control]
+```
+
+
 `data/locales/fr.json`, `de.json`, and `es.json` contain matching English-source
 keys and translations, including interface text and reference incident content.
 Keep `{placeholder}` names identical across languages. The frontend bundles these

@@ -62,6 +62,32 @@ setup followed by `azd up`, not a second independent deployment implementation.
 
 ## What azd does
 
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Dev as Operator or GitHub workflow
+    participant AZD as azd
+    participant ARM as Azure Resource Manager
+    participant ACR as Container Registry
+    participant Job as Manual seed job
+    participant App as Container App
+
+    Dev->>AZD: azd up (or provision + deploy)
+    AZD->>AZD: Preprovision hook installs Python dependencies
+    AZD->>ARM: Provision core services, identity, private endpoints, RBAC
+    AZD->>AZD: Postprovision validates outputs
+    AZD->>ACR: Remote build of the root Dockerfile
+    AZD->>ARM: Apply infra/app.bicep with the real image
+    ARM->>App: Deploy app revision
+    ARM->>Job: Create manual seed job
+    AZD->>Job: Postdeploy starts one execution and waits
+    Job->>Job: Seed 14 datasets, 8 knowledge documents, Foundry agents
+    Job-->>AZD: Execution succeeded
+    AZD->>App: Restart revision to clear fallback caches
+    AZD->>App: Verify frontend, /api/health, /api/scenario
+    AZD-->>Dev: Publish verified APP_URL
+```
+
 | Phase | Behavior |
 | --- | --- |
 | Preprovision | Checks/sets up Python dependencies needed for deployment hooks. |
@@ -79,6 +105,27 @@ principal is resolved by azd as `AZURE_PRINCIPAL_ID`; do not set it to a
 client/application ID or copy a developer's object ID into CI.
 
 ### Private data connectivity
+
+```mermaid
+flowchart LR
+    subgraph vnet[Virtual network]
+      subgraph env[VNet-integrated Consumption environment]
+        app[Container App]
+        job[Manual seed job]
+      end
+      subgraph pe[Private endpoint subnet]
+        cosmospe[Cosmos SQL private endpoint]
+        blobpe[Blob private endpoint]
+      end
+    end
+    app --> cosmospe --> cosmos[(Cosmos DB<br/>public access disabled)]
+    job --> cosmospe
+    job --> blobpe --> blob[(Storage grocery-knowledge<br/>public access disabled)]
+    app --> search[(Azure AI Search)]
+    app --> foundry[Microsoft Foundry and Azure OpenAI]
+    github[GitHub deployment identity] -->|ARM control plane only| job
+    dns["Private DNS zones<br/>privatelink.documents.azure.com<br/>privatelink.blob.core.windows.net"] -.-> vnet
+```
 
 The app and seed job share a VNet-integrated Consumption environment. A separate
 subnet hosts Cosmos SQL and Blob private endpoints, with
@@ -138,6 +185,20 @@ reruns seeding/agent registration. Use it for seed data, knowledge, or agent
 definition changes. `azd provision` changes infrastructure only.
 
 ## GitHub Actions
+
+```mermaid
+flowchart TD
+    push[Push to main] --> ci[ci.yml build, data, and offline tests]
+    ci -->|success| dev[azure-dev.yml]
+    dispatch[Manual dispatch on main] --> dev
+    dev --> login[Sign in Azure CLI with AZURE_CREDENTIALS]
+    login --> provision[azd provision --no-prompt]
+    provision --> gate{scripts/verify-acr-pull.ps1<br/>AcrPull visible within 5 minutes?}
+    gate -->|no| blocked[Deployment blocked]
+    gate -->|yes| deploy[azd deploy --no-prompt]
+    deploy --> postdeploy[Seed job, app restart, endpoint verification]
+    postdeploy --> summary[Verified URL in run summary]
+```
 
 The workflow is `.github/workflows/azure-dev.yml`. It runs after CI succeeds for
 a trusted push to `main`, and supports manual dispatch from `main`. Pull requests

@@ -72,6 +72,14 @@ executive_briefing        <- [store_operations, customer_communication]
 | 10 | `store_operations`, `customer_communication` | Two-wide execution fan-out |
 | 11 | `executive_briefing` | Final fan-in |
 
+```mermaid
+flowchart LR
+    w0["Wave 0<br/>signal_normalizer"] --> w1["Wave 1<br/>situation_assessment"] --> w2["Wave 2<br/>historical_knowledge"]
+    w2 --> w3["Wave 3<br/>4 concurrent impact nodes"] --> w4["Wave 4<br/>impact_synthesis"] --> w5["Wave 5<br/>response_planner"]
+    w5 --> w6["Wave 6<br/>5 concurrent validation nodes"] --> w7["Wave 7<br/>scenario_evaluation"] --> w8["Wave 8<br/>deliberation (conditional)"]
+    w8 --> w9["Wave 9<br/>executive_gate (human)"] --> w10["Wave 10<br/>store_operations + customer_communication"] --> w11["Wave 11<br/>executive_briefing"]
+```
+
 ## Five patterns
 
 | Pattern | Implementation detail |
@@ -83,6 +91,23 @@ executive_briefing        <- [store_operations, customer_communication]
 | Graceful degradation | Failed nodes are recorded and downstream joins continue with explicit evidence gaps. |
 
 ## Wave scheduler
+
+```mermaid
+flowchart TD
+    start[Wave eligible node] --> kind{Node kind}
+    kind -->|conditional| cond{Condition true?}
+    cond -->|no| skipped[Emit node_skipped]
+    cond -->|yes| run
+    kind -->|gate| gatestart[Emit node_started] --> gate[Invoke gate handler and wait]
+    kind -->|normal| run[Emit node_started and execute]
+    run --> ok{Executor raised?}
+    ok -->|no| completed[Record NodeResult and emit node_completed]
+    ok -->|yes| failed[Record failed NodeResult and emit node_failed]
+    gate --> completed
+    failed --> next[Siblings continue; joins record evidence gaps]
+    completed --> next
+    skipped --> next
+```
 
 The scheduler computes a depth for every node from the dependency list. Nodes with the same depth are eligible to run concurrently after all declared dependencies have produced a terminal result. Terminal means completed, failed, or skipped. The design deliberately keeps run state in a `RunContext` so two incidents can run without shared mutable state.
 
@@ -98,6 +123,15 @@ For normal nodes the scheduler emits `node_started`, calls the node executor, re
 If neither condition is met, `deliberation` is skipped and the gate uses the scenario evaluator's recommendation.
 
 ## Human-in-the-loop gate protocol
+
+```mermaid
+stateDiagram-v2
+    [*] --> Awaiting: node_started and gate_awaiting emitted
+    Awaiting --> Approved: POST /api/runs/{run_id}/decision
+    Awaiting --> AutoApproved: GATE_TIMEOUT_SECONDS elapses
+    Approved --> [*]: decision recorded with autoApproved false
+    AutoApproved --> [*]: recommended option, autoApproved true
+```
 
 When `executive_gate` starts, it emits `gate_awaiting` with the available options and the recommendation:
 
