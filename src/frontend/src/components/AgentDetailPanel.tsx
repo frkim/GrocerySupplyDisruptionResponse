@@ -9,6 +9,7 @@ import {
   formatNumber,
   humanise,
 } from '../lib/format';
+import { emphasize } from '../lib/emphasis';
 import './AgentDetailPanel.css';
 
 interface AgentDetailPanelProps {
@@ -150,7 +151,11 @@ export function AgentDetailPanel({
           <div className="detail__block">
             <h3 className="detail__block-title" id="agent-output-title">{t('Output')}</h3>
             {result?.narrative ? (
-              <p className="detail__narrative">{text(result.narrative)}</p>
+              <p className="detail__narrative">
+                {emphasize(text(result.narrative)).map((segment, index) => (segment.strong
+                  ? <strong key={index} className="detail__emphasis">{segment.text}</strong>
+                  : <span key={index}>{segment.text}</span>))}
+              </p>
             ) : (
               <p className="detail__placeholder">
                 {state === 'pending'

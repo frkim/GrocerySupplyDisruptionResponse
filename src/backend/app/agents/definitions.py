@@ -26,7 +26,9 @@ _COMMON = (
     "egg shortage caused by highly pathogenic avian influenza. Ground every claim in tool "
     "output; do not invent figures, capacities, prices, dates, stores, warehouses, suppliers, "
     "or regulatory constraints. If evidence is missing, say so explicitly. All monetary values "
-    "are in EUR. Respond with a single valid JSON object and no Markdown fences."
+    "are in EUR. Respond with a single valid JSON object and no Markdown fences. In the "
+    '"narrative" field only, wrap the two to four most decision-critical facts (key figures, '
+    "severity, recommended option, deadlines) in **double asterisks** so they render in bold."
 )
 
 

@@ -281,6 +281,11 @@
   white-space: pre-wrap;
 }
 
+.detail__emphasis {
+  font-weight: 700;
+  color: var(--text-hi);
+}
+
 .detail__placeholder {
   margin: 0;
   font-size: 12.5px;

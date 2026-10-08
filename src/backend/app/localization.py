@@ -265,6 +265,7 @@ async def _translate(payload: TranslationRequest) -> TranslationResponse:
             "Preserve __GSDR_...__ placeholders exactly once in their corresponding item; "
             "never move them to another item, alter, invent, expand, or interpret them. "
             "Preserve identifiers, URLs, numeric values, JSON structure and code; translate prose only. "
+            "Keep existing **double asterisk** emphasis markers around the corresponding translated words. "
             "Keep acronyms such as SKU, API, EUR and their plural suffixes exactly as written, "
             "and never introduce an identifier, acronym or number that is absent from the source. "
             'Return exactly one JSON object with only the key "translations", containing a string '
