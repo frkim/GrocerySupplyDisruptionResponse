@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
-    "test": "node --test tests/localization.test.mjs",
+    "test": "node --test tests/localization.test.mjs tests/emphasis.test.mjs",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit"
   },
