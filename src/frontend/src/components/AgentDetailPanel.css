@@ -38,6 +38,31 @@
   gap: 10px;
 }
 
+.detail__nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.detail__nav-button {
+  font-size: 20px;
+}
+
+.detail__nav-button:disabled {
+  cursor: default;
+  opacity: 0.4;
+  border-color: var(--line-strong);
+  color: var(--text-dim);
+}
+
+.detail__nav-pos {
+  min-width: 52px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
 .icon-button {
   display: inline-grid;
   place-items: center;
@@ -192,6 +217,34 @@
   border: 1px solid var(--line);
 }
 
+/* Vibrant metric cards: saturated, dark-enough fills keep white text at
+   WCAG AA contrast in both light and dark themes. */
+.detail__metric--duration,
+.detail__metric--prompt,
+.detail__metric--completion,
+.detail__metric--total {
+  border-color: transparent;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+}
+.detail__metric--duration { background: linear-gradient(135deg, #7c3aed, #5b21b6); }
+.detail__metric--prompt { background: linear-gradient(135deg, #0369a1, #1e40af); }
+.detail__metric--completion { background: linear-gradient(135deg, #047857, #065f46); }
+.detail__metric--total { background: linear-gradient(135deg, #c2410c, #9f1239); }
+
+.detail__metric--duration .detail__metric-label,
+.detail__metric--prompt .detail__metric-label,
+.detail__metric--completion .detail__metric-label,
+.detail__metric--total .detail__metric-label {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.detail__metric--duration .detail__metric-value,
+.detail__metric--prompt .detail__metric-value,
+.detail__metric--completion .detail__metric-value,
+.detail__metric--total .detail__metric-value {
+  color: #ffffff;
+}
+
 .detail__metric-label {
   display: block;
   font-size: 9.5px;
@@ -310,6 +363,14 @@
 .detail__json--inline {
   max-height: 180px;
   color: var(--text);
+}
+
+/* Tool-call payloads are always shown on a white surface, in both themes. */
+.detail__tool-body .detail__json {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  color: #172033;
+  color-scheme: light;
 }
 
 .detail__json--input {

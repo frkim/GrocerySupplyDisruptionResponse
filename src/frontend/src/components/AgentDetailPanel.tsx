@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { GraphNode, NodeResult, NodeState, ToolCall } from '../types';
 import { useI18n } from '../lib/i18n';
 import {
@@ -16,12 +16,24 @@ interface AgentDetailPanelProps {
   state: NodeState;
   result: NodeResult | null;
   onClose: () => void;
+  onPrevious?: () => void;
+  onNext?: () => void;
+  position?: { index: number; total: number } | null;
 }
 
-export function AgentDetailPanel({ node, state, result, onClose }: AgentDetailPanelProps) {
+export function AgentDetailPanel({
+  node, state, result, onClose, onPrevious, onNext, position,
+}: AgentDetailPanelProps) {
   const { t, text, json } = useI18n();
-  const [structuredOpen, setStructuredOpen] = useState(true);
+  const [structuredOpen, setStructuredOpen] = useState(false);
+  const [inputOpen, setInputOpen] = useState(false);
   const structuredText = result?.structured ? json(result.structured) : '';
+  const nodeId = node?.id;
+
+  useEffect(() => {
+    setStructuredOpen(false);
+    setInputOpen(false);
+  }, [nodeId]);
 
   if (!node) {
     return (
@@ -39,6 +51,7 @@ export function AgentDetailPanel({ node, state, result, onClose }: AgentDetailPa
   const hosting = result?.hostingMode ?? node.hostingMode;
   const toolCalls = result?.toolCalls ?? [];
   const hasStructured = Boolean(result?.structured && Object.keys(result.structured).length > 0);
+  const hasInput = result?.input !== undefined && result?.input !== null && result?.input !== '';
 
   return (
     <div className="detail-modal" role="presentation" onMouseDown={(event) => {
@@ -51,6 +64,36 @@ export function AgentDetailPanel({ node, state, result, onClose }: AgentDetailPa
           <p className="detail__hint">{t('Input, output, timing, and tool activity for this node.')}</p>
         </div>
         <div className="detail__head-actions">
+          <div className="detail__nav" role="group" aria-label={t('Execution navigation')}>
+            <button
+              type="button"
+              className="icon-button detail__nav-button"
+              onClick={onPrevious}
+              disabled={!onPrevious}
+              aria-label={t('Previous execution')}
+              title={t('Previous execution')}
+            >
+              ‹
+            </button>
+            {position ? (
+              <span className="detail__nav-pos mono">
+                {t('{index} of {total}', {
+                  index: formatNumber(position.index + 1),
+                  total: formatNumber(position.total),
+                })}
+              </span>
+            ) : null}
+            <button
+              type="button"
+              className="icon-button detail__nav-button"
+              onClick={onNext}
+              disabled={!onNext}
+              aria-label={t('Next execution')}
+              title={t('Next execution')}
+            >
+              ›
+            </button>
+          </div>
           <span className={`detail__state detail__state--${state}`}>{t(STATE_LABEL[state])}</span>
           <button type="button" className="icon-button" onClick={onClose} aria-label={t('Close execution details')} title={t('Close')}>
             ×
@@ -73,15 +116,27 @@ export function AgentDetailPanel({ node, state, result, onClose }: AgentDetailPa
         </div>
 
         <div className="detail__metrics">
-          <Metric label="Duration" value={formatDurationMs(result?.durationMs)} />
-          <Metric label="Prompt tokens" value={formatNumber(result?.promptTokens)} />
-          <Metric label="Completion tokens" value={formatNumber(result?.completionTokens)} />
-          <Metric label="Total tokens" value={formatNumber(result?.totalTokens)} />
+          <Metric tone="duration" label="Duration" value={formatDurationMs(result?.durationMs)} />
+          <Metric tone="prompt" label="Prompt tokens" value={formatNumber(result?.promptTokens)} />
+          <Metric tone="completion" label="Completion tokens" value={formatNumber(result?.completionTokens)} />
+          <Metric tone="total" label="Total tokens" value={formatNumber(result?.totalTokens)} />
         </div>
 
         <div className="detail__block">
-          <span className="detail__block-title">{t('Input')}</span>
-          <pre className="detail__json detail__json--input">{result?.input ? json(result.input) : DASH}</pre>
+          <button
+            type="button"
+            className="detail__toggle"
+            onClick={() => setInputOpen((open) => !open)}
+            aria-expanded={inputOpen}
+            disabled={!hasInput}
+          >
+            <span className={`detail__caret ${inputOpen ? 'detail__caret--open' : ''}`}>▸</span>
+            {t('Input')}
+            {hasInput ? null : <span className="detail__count">{t('empty')}</span>}
+          </button>
+          {inputOpen && hasInput ? (
+            <pre className="detail__json detail__json--input">{json(result?.input)}</pre>
+          ) : null}
         </div>
 
         {result?.error ? (
@@ -190,10 +245,12 @@ function ToolCallRow({ call }: { call: ToolCall }) {
   );
 }
 
-function Metric({ label, value }: { label: string; value: string }) {
+type MetricTone = 'duration' | 'prompt' | 'completion' | 'total';
+
+function Metric({ label, value, tone }: { label: string; value: string; tone: MetricTone }) {
   const { t } = useI18n();
   return (
-    <div className="detail__metric">
+    <div className={`detail__metric detail__metric--${tone}`}>
       <span className="detail__metric-label">{t(label)}</span>
       <span className="detail__metric-value mono">{value}</span>
     </div>
