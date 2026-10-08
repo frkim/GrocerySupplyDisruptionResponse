@@ -362,14 +362,17 @@ class TranslationTests(unittest.IsolatedAsyncioTestCase):
         engine._client = SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=provider)))
         self.get_engine.return_value = engine
 
-    async def test_translation_reuses_existing_engine_concurrency_gate(self):
+    async def test_translation_uses_dedicated_gate_and_deployment(self):
         active = 0
         maximum = 0
+        models = []
 
         async def provider(**kwargs):
             nonlocal active, maximum
             self.assertNotIn("tools", kwargs)
             self.assertEqual(kwargs["response_format"], {"type": "json_object"})
+            self.assertEqual(kwargs["temperature"], 0.0)
+            models.append(kwargs["model"])
             active += 1
             maximum = max(maximum, active)
             await asyncio.sleep(0.01)
@@ -381,16 +384,21 @@ class TranslationTests(unittest.IsolatedAsyncioTestCase):
 
         fake_provider = AsyncMock(side_effect=provider)
         self.use_real_engine_with_fake_provider(fake_provider)
-        with patch.object(llm, "MODEL_REQUEST_GATE", asyncio.Semaphore(1)):
-            responses = await asyncio.gather(self.post(["Hello"]), self.post(["Goodbye"]))
+        settings = SimpleNamespace(translation_deployment="fast-translator")
+        with patch.object(localization, "get_settings", return_value=settings):
+            # A saturated workflow gate must not delay display translation.
+            with patch.object(llm, "MODEL_REQUEST_GATE", asyncio.Semaphore(0)):
+                with patch.object(llm, "TRANSLATION_REQUEST_GATE", asyncio.Semaphore(1)):
+                    responses = await asyncio.gather(self.post(["Hello"]), self.post(["Goodbye"]))
         self.assertEqual([response.status_code for response in responses], [200, 200])
         self.assertEqual(maximum, 1)
         self.assertEqual(fake_provider.await_count, 2)
+        self.assertEqual(models, ["fast-translator", "fast-translator"])
 
-    async def test_timeout_includes_waiting_for_existing_model_gate(self):
+    async def test_timeout_includes_waiting_for_translation_gate(self):
         provider = AsyncMock()
         self.use_real_engine_with_fake_provider(provider)
-        with patch.object(llm, "MODEL_REQUEST_GATE", asyncio.Semaphore(0)):
+        with patch.object(llm, "TRANSLATION_REQUEST_GATE", asyncio.Semaphore(0)):
             with patch.object(localization, "TRANSLATION_TIMEOUT_SECONDS", 0.01):
                 response = await self.post(["Hello"])
         self.assertEqual(response.status_code, 504)

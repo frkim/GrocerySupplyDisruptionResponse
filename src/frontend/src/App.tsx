@@ -12,6 +12,7 @@ import { fetchHealth, fetchScenario, submitDecision } from './api/client';
 import { streamRun } from './api/stream';
 import { FALLBACK_GRAPH, FALLBACK_SIGNAL } from './lib/fallbackGraph';
 import { humanise } from './lib/format';
+import { useTranslationPrefetch } from './lib/i18n';
 import type {
   DisruptionSignal,
   GateRecommendation,
@@ -161,6 +162,13 @@ export function App() {
     ? (states[selectedNodeId] ?? 'pending')
     : 'pending';
   const selectedResult = selectedNodeId ? (results[selectedNodeId] ?? null) : null;
+
+  // Translate agent Output while the workflow runs, so Execution details open already localized.
+  const prefetchPayloads = useMemo(
+    () => Object.values(results).flatMap((result) => [result.narrative, result.structured]),
+    [results],
+  );
+  useTranslationPrefetch(prefetchPayloads);
 
   /** Executed nodes in run order: top-to-bottom, parallel siblings left-to-right. */
   const executionOrder = useMemo(() => {

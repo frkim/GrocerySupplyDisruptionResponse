@@ -37,6 +37,9 @@ param openAiEndpoint string
 @description('Name of the chat model deployment.')
 param modelDeploymentName string
 
+@description('Optional faster deployment (for example gpt-4o-mini) used only for display translation. Empty reuses the chat deployment.')
+param translationModelDeploymentName string = ''
+
 @description('Name of the embedding model deployment.')
 param embeddingDeploymentName string
 
@@ -86,6 +89,14 @@ var serviceEnvironment = [
   {
     name: 'MODEL_MAX_CONCURRENCY'
     value: '6'
+  }
+  {
+    name: 'TRANSLATION_MODEL_DEPLOYMENT_NAME'
+    value: translationModelDeploymentName
+  }
+  {
+    name: 'TRANSLATION_MAX_CONCURRENCY'
+    value: '4'
   }
   {
     name: 'EMBEDDING_DEPLOYMENT_NAME'

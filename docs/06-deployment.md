@@ -175,7 +175,10 @@ azd up
 
 Use `CHAT_MODEL_NAME`, `CHAT_MODEL_VERSION`, `CHAT_MODEL_SKU`, and
 `MODEL_DEPLOYMENT_NAME` to select a supported chat model/deployment. Check
-regional availability and quota before changing them. `EMBEDDING_DEPLOYMENT_NAME`
+regional availability and quota before changing them. Optionally set
+`TRANSLATION_MODEL_DEPLOYMENT_NAME` to an existing, faster deployment on the same
+account (for example `gpt-4o-mini`) used only for display translation; see
+[Console languages](08-console-languages.md#translation-latency). `EMBEDDING_DEPLOYMENT_NAME`
 changes the embedding deployment's name, not its vector dimensions. The knowledge
 index and current seed script expect 3072-dimensional `text-embedding-3-large`
 vectors; changing the embedding model requires a corresponding index migration.

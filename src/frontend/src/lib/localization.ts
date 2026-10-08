@@ -13,11 +13,12 @@ const CATALOGS: Record<Language, Record<string, string>> = {
 };
 const MAX_TEXT = 12_000;
 const MAX_BATCH = 24;
-const MAX_BATCH_CHARS = 12_000;
+/** Latency follows the largest batch's output tokens, so many small batches beat a few big ones. */
+const MAX_BATCH_CHARS = 4_000;
 const CACHE_LIMIT = 2_000;
 const MAX_ATTEMPTS = 3;
 const MAX_CONSECUTIVE_FAILURES = 3;
-const MAX_CONCURRENCY = 3;
+const MAX_CONCURRENCY = 4;
 const TRANSLATION_ERROR = 'Translation unavailable. Showing original text.';
 /** An embedded JSON object or array literal marks a payload as data rather than prose. */
 const STRUCTURED_PAYLOAD = /[[{]\s*"[^"\n]+"\s*:/;
@@ -111,6 +112,9 @@ export class TranslationStore {
   private listeners = new Set<() => void>();
   private cache = new Map<string, string>();
   private queue = new Set<string>();
+  /** Off-screen text translated ahead of time, only after everything visible. */
+  private backgroundQueue = new Set<string>();
+  private background = new Set<string>();
   private failed = new Set<string>();
   private inFlight = new Set<string>();
   private attempts = new Map<string, number>();
@@ -132,8 +136,15 @@ export class TranslationStore {
 
   getSnapshot = (): number => this.revision;
 
+  /** Visible work only; background prefetch does not show a translating status. */
   get pending(): boolean {
-    return this.queue.size > 0 || this.inFlight.size > 0;
+    if (this.queue.size > 0) return true;
+    for (const source of this.inFlight) if (!this.background.has(source)) return true;
+    return false;
+  }
+
+  private get queued(): number {
+    return this.queue.size + this.backgroundQueue.size;
   }
 
   private notify(): void {
@@ -145,6 +156,7 @@ export class TranslationStore {
     if (language === this.language) return;
     this.pause();
     this.queue.clear();
+    this.backgroundQueue.clear();
     this.failed.clear();
     this.attempts.clear();
     this.consecutiveFailures = 0;
@@ -159,7 +171,20 @@ export class TranslationStore {
     this.notify();
   };
 
-  text = (source: string): string => {
+  text = (source: string): string => this.lookup(source, false);
+
+  /**
+   * Queues off-screen content (for example collapsed Execution details) behind visible text,
+   * so it is usually translated before the reader opens it. Uses the same keys as text/json.
+   */
+  prefetch = (payloads: readonly unknown[]): void => {
+    if (this.language === 'en') return;
+    for (const payload of payloads) {
+      if (payload !== undefined && payload !== null) this.localizeJson(payload, true);
+    }
+  };
+
+  private lookup(source: string, background: boolean): string {
     if (this.language === 'en' || !source.trim()) return source;
     const value = source.trim();
     const prefix = source.slice(0, source.indexOf(value));
@@ -170,7 +195,8 @@ export class TranslationStore {
     if (value.length > MAX_TEXT) {
       const boundary = value.lastIndexOf(' ', MAX_TEXT);
       const split = boundary > 0 ? boundary : MAX_TEXT;
-      return prefix + this.text(value.slice(0, split)) + this.text(value.slice(split)) + suffix;
+      return prefix + this.lookup(value.slice(0, split), background)
+        + this.lookup(value.slice(split), background) + suffix;
     }
     const cacheKey = `${this.language}:${value}`;
     const cached = this.cache.get(cacheKey);
@@ -181,15 +207,25 @@ export class TranslationStore {
     }
     if (this.halted) {
       // A confirmed outage stops automatic requests until the reader retries.
-      this.failed.add(value);
+      if (!background) this.failed.add(value);
       return source;
     }
-    if (!this.failed.has(value) && !this.inFlight.has(value)) {
-      this.queue.add(value);
-      this.schedule();
+    if (this.failed.has(value)) return source;
+    if (this.inFlight.has(value)) {
+      // Promotion only affects the status; avoid notifying subscribers during a render.
+      if (!background) this.background.delete(value);
+      return source;
     }
+    if (background) {
+      if (!this.queue.has(value)) this.backgroundQueue.add(value);
+    } else {
+      // Text now on screen jumps ahead of any prefetched content.
+      this.backgroundQueue.delete(value);
+      this.queue.add(value);
+    }
+    this.schedule();
     return source;
-  };
+  }
 
   t = (source: string, params?: MessageParams): string => {
     const translated = this.text(source);
@@ -202,7 +238,10 @@ export class TranslationStore {
     });
   };
 
-  json = (value: unknown): string => {
+  json = (value: unknown): string => this.localizeJson(value, false);
+
+  private localizeJson(value: unknown, background: boolean): string {
+    const text = (source: string): string => this.lookup(source, background);
     let parsed = value;
     if (typeof value === 'string') {
       try {
@@ -210,17 +249,17 @@ export class TranslationStore {
       } catch {
         // Truncated or wrapped tool payloads are raw data, not prose: show them untouched
         // instead of spending a translation request that can only mangle their identifiers.
-        return STRUCTURED_PAYLOAD.test(value) ? value : this.text(value);
+        return STRUCTURED_PAYLOAD.test(value) ? value : text(value);
       }
     }
     const localize = (item: unknown, key = ''): unknown => {
       if (isIdentityField(key)) return item;
-      if (typeof item === 'string') return this.text(item);
+      if (typeof item === 'string') return text(item);
       if (Array.isArray(item)) return item.map((child) => localize(child, key));
       if (item && typeof item === 'object') {
         const translated: Record<string, unknown> = Object.create(null);
         for (const [name, child] of Object.entries(item)) {
-          let label = this.text(fieldLabel(name));
+          let label = text(fieldLabel(name));
           if (Object.prototype.hasOwnProperty.call(translated, label)) label += ` (${name})`;
           translated[label] = localize(child, name);
         }
@@ -229,7 +268,7 @@ export class TranslationStore {
       return item;
     };
     return JSON.stringify(this.language === 'en' ? parsed : localize(parsed), null, 2) ?? '';
-  };
+  }
 
   retry = (): void => {
     for (const source of this.failed) {
@@ -250,8 +289,11 @@ export class TranslationStore {
     this.timer = undefined;
     this.controllers.forEach((controller) => controller.abort());
     this.controllers.clear();
-    for (const source of this.inFlight) this.queue.add(source);
+    for (const source of this.inFlight) {
+      (this.background.has(source) ? this.backgroundQueue : this.queue).add(source);
+    }
     this.inFlight.clear();
+    this.background.clear();
   };
 
   resume = (): void => {
@@ -261,7 +303,7 @@ export class TranslationStore {
 
   private schedule(): void {
     if (!this.active || this.timer !== undefined
-      || this.controllers.size >= MAX_CONCURRENCY || !this.queue.size) return;
+      || this.controllers.size >= MAX_CONCURRENCY || !this.queued) return;
     // Scheduling avoids updating React subscribers during a component's render.
     this.timer = setTimeout(() => {
       this.timer = undefined;
@@ -278,26 +320,32 @@ export class TranslationStore {
       this.error = TRANSLATION_ERROR;
       return;
     }
-    this.queue.add(source);
+    (this.background.has(source) ? this.backgroundQueue : this.queue).add(source);
   }
 
   private async flush(): Promise<void> {
-    if (!this.active || this.controllers.size >= MAX_CONCURRENCY || !this.queue.size) return;
+    if (!this.active || this.controllers.size >= MAX_CONCURRENCY || !this.queued) return;
     const language = this.language;
-    const first: string | undefined = this.queue.values().next().value;
+    // Visible text is never batched behind prefetched content.
+    const isBackground = this.queue.size === 0;
+    // Prefetch leaves one request slot free so newly visible text never waits for it.
+    if (isBackground && this.controllers.size >= MAX_CONCURRENCY - 1) return;
+    const pool = isBackground ? this.backgroundQueue : this.queue;
+    const first: string | undefined = pool.values().next().value;
     if (first === undefined) return;
     // A text that already failed is retried alone, isolating the item the provider rejects.
     const limit = (this.attempts.get(first) ?? 0) > 0 ? 1 : MAX_BATCH;
     const batch: string[] = [];
     let size = 0;
-    for (const source of this.queue) {
+    for (const source of pool) {
       if (batch.length >= limit || (batch.length > 0 && size + source.length > MAX_BATCH_CHARS)) break;
       batch.push(source);
       size += source.length;
     }
     batch.forEach((source) => {
-      this.queue.delete(source);
+      pool.delete(source);
       this.inFlight.add(source);
+      if (isBackground) this.background.add(source);
     });
     const controller = new AbortController();
     this.controllers.add(controller);
@@ -342,13 +390,17 @@ export class TranslationStore {
         this.halted = true;
         this.queue.forEach((source) => this.failed.add(source));
         this.queue.clear();
+        this.backgroundQueue.clear();
         this.error = TRANSLATION_ERROR;
       }
       console.warn(error instanceof Error ? error.message : 'Translation request failed.');
     } finally {
       clearTimeout(timeout);
       if (this.controllers.delete(controller)) {
-        batch.forEach((source) => this.inFlight.delete(source));
+        batch.forEach((source) => {
+          this.inFlight.delete(source);
+          this.background.delete(source);
+        });
         this.notify();
         this.schedule();
       }

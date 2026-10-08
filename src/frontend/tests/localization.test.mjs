@@ -294,12 +294,78 @@ test('slow agent output translates over several concurrent requests', async () =
     `Execution detail narrative number ${index} describing the agent output in full. `.repeat(6));
   sources.forEach((source) => store.text(source));
   await settled(store);
-  assert.ok(peak > 1 && peak <= 3, `Expected bounded concurrency, saw ${peak}.`);
+  assert.ok(peak > 1 && peak <= 4, `Expected bounded concurrency, saw ${peak}.`);
   for (const texts of calls) {
     assert.ok(texts.length === 1
-      || texts.reduce((total, text) => total + text.length, 0) <= 12000);
+      || texts.reduce((total, text) => total + text.length, 0) <= 4000);
   }
   for (const source of sources) assert.equal(store.text(source), `fr:${source}`);
+  store.pause();
+});
+
+test('prefetched agent output is translated before display without a translating status', async () => {
+  const calls = [];
+  const store = new TranslationStore('fr', async (_, texts) => {
+    calls.push(texts);
+    return texts.map((text) => `fr:${text}`);
+  });
+  const narrative = 'Prefetched narrative about the supplier delay.';
+  const structured = { summary: 'Prefetched structured summary.', optionId: 'OPT-A' };
+  store.prefetch([narrative, structured, undefined, null]);
+  assert.equal(store.pending, false, 'Background prefetch must not show a translating status.');
+  await pause(150);
+  const sent = calls.flat();
+  assert.ok(sent.includes(narrative));
+  assert.ok(sent.includes('Prefetched structured summary.'));
+  assert.ok(!sent.includes('OPT-A'), 'Identity fields are never sent.');
+  const requests = calls.length;
+  assert.equal(store.text(narrative), `fr:${narrative}`);
+  assert.ok(Object.values(JSON.parse(store.json(structured)))
+    .includes('fr:Prefetched structured summary.'));
+  await pause(100);
+  assert.equal(calls.length, requests, 'Opening prefetched content needs no new request.');
+  store.pause();
+});
+
+test('visible text is translated ahead of queued prefetch', async () => {
+  const calls = [];
+  const store = new TranslationStore('fr', async (_, texts) => {
+    calls.push(texts);
+    return texts.map((text) => `fr:${text}`);
+  });
+  store.prefetch(['Background narrative one.', 'Background narrative two.']);
+  store.text('Visible narrative on screen.');
+  store.text('Background narrative two.');
+  await settled(store);
+  await pause(150);
+  assert.deepEqual(calls[0], ['Visible narrative on screen.', 'Background narrative two.']);
+  assert.deepEqual(calls.flat().sort(), [
+    'Background narrative one.', 'Background narrative two.', 'Visible narrative on screen.',
+  ]);
+  store.pause();
+});
+
+test('prefetch in English sends no request', async () => {
+  const store = new TranslationStore('en', async () => assert.fail('English needs no translation.'));
+  store.prefetch(['An English narrative.', { summary: 'English summary.' }]);
+  await pause(100);
+  store.pause();
+});
+
+test('prefetch keeps one request slot free for visible text', async () => {
+  let inFlight = 0;
+  let peak = 0;
+  const store = new TranslationStore('fr', async (_, texts) => {
+    inFlight += 1;
+    peak = Math.max(peak, inFlight);
+    await pause(40);
+    inFlight -= 1;
+    return texts.map((text) => `fr:${text}`);
+  });
+  store.prefetch(Array.from({ length: 40 }, (_, index) =>
+    `Background agent narrative number ${index}. `.repeat(100)));
+  await pause(600);
+  assert.ok(peak >= 1 && peak <= 3, `Prefetch used ${peak} slots.`);
   store.pause();
 });
 test('unparsable tool payloads are shown as raw data instead of being translated', async () => {

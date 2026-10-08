@@ -35,6 +35,9 @@
     "modelDeploymentName": {
       "value": "${MODEL_DEPLOYMENT_NAME}"
     },
+    "translationModelDeploymentName": {
+      "value": "${TRANSLATION_MODEL_DEPLOYMENT_NAME}"
+    },
     "embeddingDeploymentName": {
       "value": "${EMBEDDING_DEPLOYMENT_NAME}"
     },

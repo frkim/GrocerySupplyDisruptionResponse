@@ -31,3 +31,16 @@ export function useI18n() {
     retry: store.retry,
   }), [store, revision]);
 }
+
+/**
+ * Translates content ahead of display (for example agent output shown later in Execution
+ * details). Re-renders only when the language changes, not on every translation update.
+ */
+export function useTranslationPrefetch(payloads: readonly unknown[]): void {
+  const store = useContext(I18nContext);
+  if (!store) throw new Error('useTranslationPrefetch requires I18nProvider.');
+  const language = useSyncExternalStore(store.subscribe, () => store.language);
+  useEffect(() => {
+    store.prefetch(payloads);
+  }, [store, language, payloads]);
+}
