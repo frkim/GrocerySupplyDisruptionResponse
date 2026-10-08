@@ -15,7 +15,7 @@ from typing import Any, Awaitable, Callable
 from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 from openai import AsyncAzureOpenAI
 
-from .config import get_settings
+from .config import deployment_supports_temperature, get_settings
 from .contracts import ToolCall
 
 logger = logging.getLogger(__name__)
@@ -24,6 +24,8 @@ ToolHandler = Callable[..., Awaitable[Any]]
 
 # Bound fan-out so the configured deployment is not overwhelmed by a workflow burst.
 MODEL_REQUEST_GATE = asyncio.Semaphore(get_settings().model_max_concurrency)
+# Display translation is latency-sensitive, so it must not wait behind workflow agents.
+TRANSLATION_REQUEST_GATE = asyncio.Semaphore(get_settings().translation_max_concurrency)
 
 _JSON_FENCE = re.compile(r"```(?:json)?\s*(.*?)\s*```", re.DOTALL)
 
@@ -90,10 +92,19 @@ class ChatEngine:
         handlers: dict[str, ToolHandler] | None = None,
         force_json: bool = True,
         max_tool_rounds: int = 4,
+        deployment: str | None = None,
+        gate: asyncio.Semaphore | None = None,
+        temperature: float = 0.2,
     ) -> tuple[str, list[ToolCall], dict[str, int]]:
         if self._client is None:
             raise RuntimeError("Azure OpenAI is not configured (AZURE_OPENAI_ENDPOINT missing).")
 
+        model = deployment or self._settings.model_deployment
+        use_temperature = (
+            deployment_supports_temperature(deployment) if deployment
+            else self._settings.supports_temperature
+        )
+        request_gate = gate or MODEL_REQUEST_GATE
         messages: list[dict[str, Any]] = [
             {"role": "system", "content": instructions},
             {"role": "user", "content": prompt},
@@ -104,18 +115,18 @@ class ChatEngine:
 
         for _ in range(max_tool_rounds + 1):
             kwargs: dict[str, Any] = {
-                "model": self._settings.model_deployment,
+                "model": model,
                 "messages": messages,
             }
-            if self._settings.supports_temperature:
-                kwargs["temperature"] = 0.2
+            if use_temperature:
+                kwargs["temperature"] = temperature
             if tools:
                 kwargs["tools"] = tools
                 kwargs["tool_choice"] = "auto"
             if force_json and not tools:
                 kwargs["response_format"] = {"type": "json_object"}
 
-            async with MODEL_REQUEST_GATE:
+            async with request_gate:
                 response = await self._client.chat.completions.create(**kwargs)
 
             if response.usage:
@@ -181,12 +192,12 @@ class ChatEngine:
 
         # Tool budget exhausted: ask once more for a final answer without tools.
         final_kwargs: dict[str, Any] = {
-            "model": self._settings.model_deployment,
+            "model": model,
             "messages": messages + [{"role": "user", "content": "Provide your final JSON answer now."}],
         }
-        if self._settings.supports_temperature:
-            final_kwargs["temperature"] = 0.2
-        async with MODEL_REQUEST_GATE:
+        if use_temperature:
+            final_kwargs["temperature"] = temperature
+        async with request_gate:
             final = await self._client.chat.completions.create(**final_kwargs)
         if final.usage:
             usage["prompt"] += final.usage.prompt_tokens or 0

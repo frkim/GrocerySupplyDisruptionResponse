@@ -18,12 +18,22 @@ def _flag(name: str, default: bool = True) -> bool:
     return raw.strip().lower() in {"1", "true", "yes", "on"}
 
 
+def deployment_supports_temperature(deployment: str) -> bool:
+    return not deployment.lower().startswith(("gpt-5", "o1", "o3", "o4"))
+
+
 class Settings:
     def __init__(self) -> None:
         self.openai_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT", "").rstrip("/")
         self.ai_project_endpoint = os.getenv("AZURE_AI_PROJECT_ENDPOINT", "").rstrip("/")
         self.model_deployment = os.getenv("MODEL_DEPLOYMENT_NAME", "gpt-4o")
         self.model_max_concurrency = int(os.getenv("MODEL_MAX_CONCURRENCY", "6"))
+        # Display translation gets its own slots (and optionally a faster deployment) so it
+        # never queues behind a running workflow. An empty name reuses the chat deployment.
+        self.translation_deployment = (
+            os.getenv("TRANSLATION_MODEL_DEPLOYMENT_NAME", "").strip() or self.model_deployment
+        )
+        self.translation_max_concurrency = int(os.getenv("TRANSLATION_MAX_CONCURRENCY", "4"))
         self.embedding_deployment = os.getenv("EMBEDDING_DEPLOYMENT_NAME", "text-embedding-3-large")
         self.api_version = os.getenv("AZURE_OPENAI_API_VERSION", "2024-10-21")
 
@@ -71,7 +81,7 @@ class Settings:
 
     @property
     def supports_temperature(self) -> bool:
-        return not self.model_deployment.lower().startswith(("gpt-5", "o1", "o3", "o4"))
+        return deployment_supports_temperature(self.model_deployment)
 
     @property
     def has_cosmos(self) -> bool:

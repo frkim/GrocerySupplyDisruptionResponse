@@ -3,7 +3,9 @@
 Requests: en/fr/de/es, 1–24 nonblank strings, 12,000 characters per string,
 40,000 characters total, and at most 512,000 encoded request bytes. Outputs:
 24,000 characters per string and 80,000 total. The 45-second deadline includes
-waiting for the existing chat engine's shared model concurrency gate.
+waiting for the dedicated translation concurrency gate, which is separate from the
+workflow agents' gate so display translation never queues behind a running workflow.
+``TRANSLATION_MODEL_DEPLOYMENT_NAME`` optionally selects a faster deployment.
 Masked model prompts (including their JSON envelope) are limited to 80,000
 characters. Unavailable or invalid catalogs emit content-free warnings and
 fall back to inference for missing entries. A text whose translation fails
@@ -27,6 +29,8 @@ from fastapi import HTTPException, Request
 from openai import APITimeoutError
 from pydantic import BaseModel, ConfigDict, Field, StrictStr, ValidationError, field_validator
 
+from . import llm
+from .config import get_settings
 from .llm import get_engine
 from .paths import data_dir
 
@@ -271,6 +275,9 @@ async def _translate(payload: TranslationRequest) -> TranslationResponse:
             prompt=prompt,
             force_json=True,
             max_tool_rounds=0,
+            deployment=get_settings().translation_deployment,
+            gate=llm.TRANSLATION_REQUEST_GATE,
+            temperature=0.0,
         )
         try:
             if calls or not isinstance(raw, str) or len(raw) > MAX_MODEL_RESPONSE_CHARS:

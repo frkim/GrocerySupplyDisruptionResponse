@@ -29,7 +29,7 @@ flowchart TD
     known -->|no| kind{Prose or raw tool payload?}
     kind -->|raw payload| unchanged[Display unchanged]
     kind -->|prose| batch["Batch up to 24 texts<br/>POST /api/translate"]
-    batch --> model[Shared Azure OpenAI chat engine]
+    batch --> model[Azure OpenAI chat engine<br/>dedicated translation slots]
     model --> valid{Response and protected<br/>tokens valid?}
     valid -->|yes| show[Cache and display translation]
     valid -->|no| retry{Attempted three times<br/>or three failed requests?}
@@ -54,8 +54,9 @@ Content-Type: application/json
 ```
 
 The response contains `translations` in the same order as `texts`. This endpoint
-uses the existing Azure OpenAI model and identity through the shared chat engine,
-with no additional Azure resources, credentials, or external translation service.
+uses the existing Azure OpenAI account and identity through the shared chat engine,
+with no additional credentials or external translation service. By default it uses
+the chat deployment; `TRANSLATION_MODEL_DEPLOYMENT_NAME` can select a faster one.
 Translation consumes model tokens in addition to workflow inference.
 
 The browser deduplicates and caches translations, batches visible content, and
@@ -66,9 +67,41 @@ The encoded request body is capped at 512,000 bytes. After technical tokens are
 protected, the model prompt is limited to 80,000 characters; oversized expanded
 requests are rejected before inference. The translation deadline is 45 seconds.
 
+## Translation latency
+
+Model latency is dominated by the number of output tokens in the largest request,
+and by time spent waiting for a model slot. Several measures keep translation fast:
+
+| Measure | Effect |
+| --- | --- |
+| Bundled catalogs | Interface and reference incident text never calls the model. |
+| Browser and backend caches | A text is translated once per language; switching back, reopening a panel, or reloading the page (backend LRU cache) is instant. |
+| Dedicated translation slots | `TRANSLATION_MAX_CONCURRENCY` (default 4) is separate from the workflow agents' `MODEL_MAX_CONCURRENCY`, so translation never queues behind a running twenty-agent workflow. |
+| Small parallel batches | The browser caps each request at 4,000 characters and sends up to four requests concurrently, so the first translations appear quickly and no single large batch holds the rest back. |
+| Background prefetch | When a language other than English is selected, each agent's narrative and structured Output is translated as soon as the agent completes, at lower priority than visible text and never using the last request slot. Execution details are therefore usually already translated when opened. Tool arguments and results are translated only when expanded. |
+| Deterministic output | Translation runs at temperature 0 when the deployment supports it. |
+| Optional faster model | `TRANSLATION_MODEL_DEPLOYMENT_NAME` selects a separate deployment, such as `gpt-4o-mini` or `gpt-4.1-mini`, used only for display translation. It also gets its own tokens-per-minute quota, isolated from the workflow. Empty (the default) reuses `MODEL_DEPLOYMENT_NAME`. |
+
+To use a faster translation model, create the deployment on the same Foundry account
+(the application identity's role assignment covers every deployment on the account),
+then set the name and redeploy:
+
+```powershell
+az cognitiveservices account deployment create -g <resource-group> -n <foundry-account> `
+  --deployment-name gpt-4o-mini --model-name gpt-4o-mini --model-version 2024-07-18 `
+  --model-format OpenAI --sku-name GlobalStandard --sku-capacity 50
+azd env set TRANSLATION_MODEL_DEPLOYMENT_NAME gpt-4o-mini
+azd deploy
+```
+
+For local runs, set `TRANSLATION_MODEL_DEPLOYMENT_NAME` in `.env`. Check model
+availability in your region before creating the deployment. Without a separate
+deployment, translation and workflow requests share the chat deployment's quota.
+
 To keep long agent Execution details from translating one batch at a time, the
-browser sends up to three requests concurrently and caps each request at 12,000
+browser sends up to four requests concurrently and caps each request at 4,000
 characters, so a slow batch no longer blocks the rest of the visible content.
+Visible text is always sent before prefetched background content.
 
 While translation is pending, the original content remains readable and the
 header shows the translation status. A text whose translation fails validation, or
