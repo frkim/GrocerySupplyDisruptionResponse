@@ -170,6 +170,23 @@ export function App() {
   );
   useTranslationPrefetch(prefetchPayloads);
 
+  /** Executed nodes in run order: top-to-bottom, parallel siblings left-to-right. */
+  const executionOrder = useMemo(() => {
+    const sorted = [...graph.nodes].sort((a, b) =>
+      (Number.isFinite(a.row) ? a.row : 0) - (Number.isFinite(b.row) ? b.row : 0)
+      || (Number.isFinite(a.col) ? a.col : 0) - (Number.isFinite(b.col) ? b.col : 0));
+    const executed = sorted.filter((node) => (states[node.id] ?? 'pending') !== 'pending');
+    const ids = (selectedNodeId && executed.some((node) => node.id === selectedNodeId))
+      ? executed
+      : sorted;
+    return ids.map((node) => node.id);
+  }, [graph.nodes, states, selectedNodeId]);
+  const selectedIndex = selectedNodeId ? executionOrder.indexOf(selectedNodeId) : -1;
+  const previousNodeId = selectedIndex > 0 ? executionOrder[selectedIndex - 1] : null;
+  const nextNodeId = selectedIndex >= 0 && selectedIndex < executionOrder.length - 1
+    ? executionOrder[selectedIndex + 1]
+    : null;
+
   /* ---------------- Event handling ---------------- */
 
   const applyEvent = useCallback(
@@ -460,6 +477,18 @@ export function App() {
     setInspectorOpen(true);
   }, []);
 
+  useEffect(() => {
+    if (!inspectorOpen) return;
+    const navigate = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (target && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) return;
+      if (event.key === 'ArrowLeft' && previousNodeId) handleSelectNode(previousNodeId);
+      if (event.key === 'ArrowRight' && nextNodeId) handleSelectNode(nextNodeId);
+    };
+    window.addEventListener('keydown', navigate);
+    return () => window.removeEventListener('keydown', navigate);
+  }, [inspectorOpen, previousNodeId, nextNodeId, handleSelectNode]);
+
   const showGate = gateOpen || decision !== null;
 
   return (
@@ -531,6 +560,9 @@ export function App() {
           state={selectedState}
           result={selectedResult}
           onClose={() => setInspectorOpen(false)}
+          onPrevious={previousNodeId ? () => handleSelectNode(previousNodeId) : undefined}
+          onNext={nextNodeId ? () => handleSelectNode(nextNodeId) : undefined}
+          position={selectedIndex >= 0 ? { index: selectedIndex, total: executionOrder.length } : null}
         />
       ) : null}
     </div>
